@@ -21,7 +21,7 @@ export const ServiceManager: React.FC<ServiceManagerProps> = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(5000);
-  const [category, setCategory] = useState<'CREMATION' | 'BURIAL' | 'NAME_PLATE' | 'ADDON'>('BURIAL');
+  const [category, setCategory] = useState<'CREMATION' | 'BURIAL' | 'NAME_PLATE' | 'MAINTENANCE' | 'ADDON'>('BURIAL');
   const [isSubscription, setIsSubscription] = useState(false);
 
   const openNewForm = () => {

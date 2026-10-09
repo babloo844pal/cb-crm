@@ -1,4 +1,4 @@
-export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'PENDING_RENEWAL' | 'UNAUTHORIZED';
+export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'EXPIRING_SOON' | 'ALLOTTED_TODAY' | 'RENEWED_TODAY' | 'UNAUTHORIZED' | 'PENDING_RENEWAL';
 export type UserRole = 'ADMIN' | 'STAFF';
 
 export interface Location {
@@ -7,7 +7,9 @@ export interface Location {
   code: string;
   address: string;
   phone: string;
-  activePlotsCount: number;
+  totalPlots: number;
+  occupiedPlots: number;
+  availablePlots: number;
 }
 
 export interface AppUser {
@@ -16,56 +18,96 @@ export interface AppUser {
   displayName: string;
   photoURL?: string;
   role: UserRole;
-  assignedLocationId?: string; // If STAFF, restricted to this location
+  assignedLocationId?: string;
   invitedBy?: string;
   status: 'ACTIVE' | 'INVITED';
 }
 
-export interface ServicePackage {
+export interface ServiceItem {
   id: string;
   name: string;
   description: string;
   price: number;
-  category: 'CREMATION' | 'BURIAL' | 'NAME_PLATE' | 'ADDON';
+  category: 'BURIAL' | 'CREMATION' | 'NAME_PLATE' | 'MAINTENANCE' | 'ADDON';
   isSubscription?: boolean;
   subscriptionYears?: number;
+  active?: boolean;
+}
+
+export type ServicePackage = ServiceItem;
+
+export interface ComboPackage {
+  id: string;
+  packageName: string;
+  description: string;
+  bundledServiceIds: string[];
+  totalOriginalPrice: number;
+  comboPrice: number;
+  savings: number;
+  includesNamePlate: boolean;
   active: boolean;
 }
 
-export interface BurialRecord {
+export interface CustomerBooking {
   id: string;
   receiptNo: string;
   locationId: string;
   locationName: string;
-  ownerName: string;
-  ownerPhone: string;
+  customerName: string;
+  ownerName?: string;
+  customerPhone: string;
+  ownerPhone?: string;
+  whatsappNumber: string;
+  address: string;
   petName: string;
-  petSpecies: 'Dog' | 'Cat' | 'Bird' | 'Other';
-  burialDate: string;
+  petType: 'Dog' | 'Cat' | 'Bird' | 'Other';
+  petSpecies?: 'Dog' | 'Cat' | 'Bird' | 'Other';
+  petBreed?: string;
+  petAge?: string;
   plotSector: string;
+  plotRow?: string;
   plotNumber: string;
-  serviceCharge: number;
+  selectedServiceIds: string[];
+  selectedComboPackageId?: string;
+  totalAmount: number;
+  paymentMethod: 'QR_CODE' | 'CASH' | 'WHATSAPP_PAY_LINK' | 'ONLINE_UPI';
+  paymentStatus: 'PAID' | 'PENDING';
+  bookingDate: string;
+  burialDate?: string;
+  serviceCharge?: number;
   hasNamePlate: boolean;
-  notes?: string;
   createdByStaff: string;
+  notes?: string;
 }
+
+export type BurialRecord = CustomerBooking;
 
 export interface NamePlateSubscription {
   id: string;
-  burialId: string;
+  bookingId?: string;
+  burialId?: string;
   locationId: string;
+  locationName?: string;
   tagSerial: string;
   qrCodeUrl?: string;
   petName: string;
-  ownerName: string;
-  ownerPhone: string;
+  customerName: string;
+  ownerName?: string;
+  customerPhone: string;
+  ownerPhone?: string;
+  whatsappNumber: string;
   plotSector: string;
   plotNumber: string;
   amountPaid: number;
-  startDate: string;
+  allotmentDate?: string;
+  startDate?: string;
   expiryDate: string;
+  daysUntilExpiry: number;
   status: SubscriptionStatus;
-  workOrderIssued: boolean;
+  isRenewedToday?: boolean;
+  isAllottedToday?: boolean;
+  lastReminderSentAt?: string;
+  workOrderIssued?: boolean;
   installedBy?: string;
   installationDate?: string;
 }
@@ -82,4 +124,17 @@ export interface AuditLog {
   petName: string;
   actionTaken?: string;
   flaggedForRemoval?: boolean;
+}
+
+export interface RevenueStats {
+  todayCollection: number;
+  sevenDaysCollection: number;
+  fifteenDaysCollection: number;
+  thirtyDaysCollection: number;
+  totalAllottedToday: number;
+  totalRenewedToday: number;
+  expiringIn1Day: number;
+  expiringIn7Days: number;
+  expiringIn15Days: number;
+  expiringIn30Days: number;
 }

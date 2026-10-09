@@ -17,7 +17,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ subscr
   const filteredSubscriptions = subscriptions.filter((sub) => {
     const matchesSearch =
       sub.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sub.customerName || sub.ownerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.tagSerial.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sub.plotNumber.toLowerCase().includes(searchTerm.toLowerCase());
 

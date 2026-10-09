@@ -22,7 +22,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const userLocation = locations.find((l) => l.id === currentUser.assignedLocationId) || locations[0];
 
-  const activeBurialPackages = servicePackages.filter((p) => p.category === 'BURIAL' && p.active);
+  const activeBurialPackages = servicePackages.filter((p) => p.category === 'BURIAL' && (p.active !== false));
   const namePlatePackage = servicePackages.find((p) => p.category === 'NAME_PLATE') || { price: 5000 };
 
   const [selectedPackageId, setSelectedPackageId] = useState(activeBurialPackages[0]?.id || '');
@@ -57,14 +57,24 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       receiptNo,
       locationId: userLocation.id,
       locationName: userLocation.name,
+      customerName: ownerName,
+      customerPhone: ownerPhone,
+      whatsappNumber: ownerPhone,
+      address: 'Registered Location',
       ownerName,
       ownerPhone,
       petName,
       petSpecies,
+      petType: petSpecies,
       burialDate: todayStr,
       plotSector,
       plotNumber,
       serviceCharge,
+      selectedServiceIds: ['SRV-101'],
+      totalAmount: serviceCharge + (includeNamePlate ? namePlatePackage.price : 0),
+      paymentMethod: 'QR_CODE',
+      paymentStatus: 'PAID',
+      bookingDate: todayStr,
       hasNamePlate: includeNamePlate,
       notes: `${selectedPackage?.name || 'Burial'} - ${notes}`,
       createdByStaff: currentUser.displayName,
@@ -103,13 +113,17 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         locationId: userLocation.id,
         tagSerial,
         petName,
+        customerName: ownerName,
         ownerName,
+        customerPhone: ownerPhone,
         ownerPhone,
+        whatsappNumber: ownerPhone,
         plotSector,
         plotNumber,
         amountPaid: namePlatePackage.price,
         startDate: todayStr,
         expiryDate: expiryStr,
+        daysUntilExpiry: 365,
         status: 'ACTIVE',
         workOrderIssued: true,
         installedBy: currentUser.displayName,
@@ -347,12 +361,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-500 block">Owner Details:</span>
-                <span className="font-bold text-slate-800">{receiptData.burial.ownerName}</span>
-                <span className="text-slate-500 block mt-1">{receiptData.burial.ownerPhone}</span>
+                <span className="font-bold text-slate-800">{receiptData.burial.customerName}</span>
+                <span className="text-slate-500 block mt-1">{receiptData.burial.customerPhone}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Pet & Plot:</span>
-                <span className="font-bold text-slate-800">{receiptData.burial.petName} ({receiptData.burial.petSpecies})</span>
+                <span className="font-bold text-slate-800">{receiptData.burial.petName} ({receiptData.burial.petType})</span>
                 <span className="text-slate-500 block mt-1">Plot: {receiptData.burial.plotSector} - {receiptData.burial.plotNumber}</span>
               </div>
             </div>
@@ -369,7 +383,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                 <tbody className="divide-y divide-slate-100">
                   <tr>
                     <td className="p-2.5 font-medium">{receiptData.burial.notes}</td>
-                    <td className="p-2.5 text-right font-semibold">₹{receiptData.burial.serviceCharge.toLocaleString('en-IN')}</td>
+                    <td className="p-2.5 text-right font-semibold">₹{(receiptData.burial.serviceCharge || 8000).toLocaleString('en-IN')}</td>
                   </tr>
                   {receiptData.subscription && (
                     <tr className="bg-emerald-50/50">
@@ -385,31 +399,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                   <tr className="font-bold bg-slate-50 text-sm">
                     <td className="p-2.5 text-slate-900">Grand Total Paid</td>
                     <td className="p-2.5 text-right text-emerald-600">
-                      ₹{(receiptData.burial.serviceCharge + (receiptData.subscription ? namePlatePackage.price : 0)).toLocaleString('en-IN')}
+                      ₹{((receiptData.burial.serviceCharge || 8000) + (receiptData.subscription ? namePlatePackage.price : 0)).toLocaleString('en-IN')}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-
-            {/* QR Code & Work Order Authentication Token */}
-            {receiptData.subscription && receiptData.qrDataUrl && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center space-x-4">
-                <img src={receiptData.qrDataUrl} alt="QR Code Tag" className="w-24 h-24 border border-emerald-300 rounded-lg bg-white p-1" />
-                <div className="text-xs space-y-1">
-                  <div className="flex items-center space-x-1 text-emerald-800 font-bold">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Ground Installation Authorized</span>
-                  </div>
-                  <p className="text-slate-600 text-[11px]">
-                    Staff <strong className="font-semibold">{currentUser.displayName}</strong> authorized installation with Serial Sticker <strong className="font-mono">{receiptData.subscription.tagSerial}</strong>.
-                  </p>
-                  <span className="inline-block bg-emerald-600 text-white font-mono text-[10px] px-2 py-0.5 rounded font-bold">
-                    Cleared in Central CRM
-                  </span>
-                </div>
-              </div>
-            )}
 
             {/* Actions */}
             <div className="flex space-x-3 pt-2">
