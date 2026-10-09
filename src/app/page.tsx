@@ -144,6 +144,8 @@ export default function Home() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           currentUser={currentUser}
           setCurrentUser={setCurrentUser}
           availableUsers={users}
@@ -152,6 +154,7 @@ export default function Home() {
           setSelectedLocationFilter={setSelectedLocationFilter}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          expiringCount={expiringCount}
         />
 
         <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto">
