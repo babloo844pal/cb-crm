@@ -1,9 +1,106 @@
-import { BurialRecord, NamePlateSubscription, AuditLog } from './types';
+import { Location, AppUser, ServicePackage, BurialRecord, NamePlateSubscription, AuditLog } from './types';
+
+export const initialLocations: Location[] = [
+  {
+    id: 'LOC-1',
+    name: 'South Memorial Gardens (HQ)',
+    code: 'SMG-SOUTH',
+    address: 'Plot 45, Green Valley Sector 12, South Region',
+    phone: '+91 98765 00001',
+    activePlotsCount: 40,
+  },
+  {
+    id: 'LOC-2',
+    name: 'North Paws Haven Branch',
+    code: 'NPH-NORTH',
+    address: 'Survey 102, Lake Road, North District',
+    phone: '+91 98765 00002',
+    activePlotsCount: 30,
+  },
+];
+
+export const initialUsers: AppUser[] = [
+  {
+    uid: 'USR-ADMIN-01',
+    email: 'admin@cb-crm.com',
+    displayName: 'Vikram Mehta (System Admin)',
+    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=faces',
+    role: 'ADMIN',
+    status: 'ACTIVE',
+  },
+  {
+    uid: 'USR-STAFF-01',
+    email: 'staff.south@cb-crm.com',
+    displayName: 'Suresh Kumar (South Operator)',
+    photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces',
+    role: 'STAFF',
+    assignedLocationId: 'LOC-1',
+    invitedBy: 'admin@cb-crm.com',
+    status: 'ACTIVE',
+  },
+  {
+    uid: 'USR-STAFF-02',
+    email: 'staff.north@cb-crm.com',
+    displayName: 'Ramesh Singh (North Operator)',
+    photoURL: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=faces',
+    role: 'STAFF',
+    assignedLocationId: 'LOC-2',
+    invitedBy: 'admin@cb-crm.com',
+    status: 'ACTIVE',
+  },
+];
+
+export const initialServicePackages: ServicePackage[] = [
+  {
+    id: 'PKG-101',
+    name: 'Standard Pet Burial',
+    description: 'Ground burial plot allocation, basic casket, grave preparation, and burial ceremony.',
+    price: 8000,
+    category: 'BURIAL',
+    active: true,
+  },
+  {
+    id: 'PKG-102',
+    name: 'Premium Wooden Casket Burial',
+    description: 'Premium rosewood casket, grave plot decoration, memorial flower wreath & ceremony.',
+    price: 12000,
+    category: 'BURIAL',
+    active: true,
+  },
+  {
+    id: 'PKG-103',
+    name: '1-Year Pet Name Plate Subscription',
+    description: 'Custom metal name plate mounted on plot with tamper-evident QR serial tag. Renewable annually.',
+    price: 5000,
+    category: 'NAME_PLATE',
+    isSubscription: true,
+    subscriptionYears: 1,
+    active: true,
+  },
+  {
+    id: 'PKG-104',
+    name: 'Individual Pet Cremation & Urn',
+    description: 'Eco-friendly individual cremation service with custom ceramic memorial urn.',
+    price: 10000,
+    category: 'CREMATION',
+    active: true,
+  },
+  {
+    id: 'PKG-105',
+    name: 'VIP Memorial Shrine Casket Package',
+    description: 'Luxury marble memorial stone, polished metal name plate, and 1st year subscription included.',
+    price: 18000,
+    category: 'ADDON',
+    active: true,
+  }
+];
 
 export const initialBurials: BurialRecord[] = [
   {
     id: 'BUR-1001',
     receiptNo: 'REC-2026-001',
+    locationId: 'LOC-1',
+    locationName: 'South Memorial Gardens (HQ)',
     ownerName: 'Rajesh Sharma',
     ownerPhone: '+91 98765 43210',
     petName: 'Bruno',
@@ -13,11 +110,14 @@ export const initialBurials: BurialRecord[] = [
     plotNumber: 'A-12',
     serviceCharge: 12000,
     hasNamePlate: true,
-    notes: 'Premium wooden casket & 1-Year Name Plate'
+    notes: 'Premium wooden casket & 1-Year Name Plate',
+    createdByStaff: 'Suresh Kumar'
   },
   {
     id: 'BUR-1002',
     receiptNo: 'REC-2026-002',
+    locationId: 'LOC-1',
+    locationName: 'South Memorial Gardens (HQ)',
     ownerName: 'Priya Verma',
     ownerPhone: '+91 98123 45678',
     petName: 'Whiskers',
@@ -27,11 +127,14 @@ export const initialBurials: BurialRecord[] = [
     plotNumber: 'A-15',
     serviceCharge: 8000,
     hasNamePlate: true,
-    notes: 'Standard burial with Name Plate'
+    notes: 'Standard burial with Name Plate',
+    createdByStaff: 'Suresh Kumar'
   },
   {
     id: 'BUR-1003',
     receiptNo: 'REC-2026-003',
+    locationId: 'LOC-2',
+    locationName: 'North Paws Haven Branch',
     ownerName: 'Amit Patel',
     ownerPhone: '+91 99887 76655',
     petName: 'Max',
@@ -41,11 +144,14 @@ export const initialBurials: BurialRecord[] = [
     plotNumber: 'B-04',
     serviceCharge: 10000,
     hasNamePlate: true,
-    notes: 'Burial with 1-Year Name Plate'
+    notes: 'Burial with 1-Year Name Plate',
+    createdByStaff: 'Ramesh Singh'
   },
   {
     id: 'BUR-1004',
     receiptNo: 'REC-2026-004',
+    locationId: 'LOC-2',
+    locationName: 'North Paws Haven Branch',
     ownerName: 'Sneha Roy',
     ownerPhone: '+91 97654 32109',
     petName: 'Coco',
@@ -55,11 +161,14 @@ export const initialBurials: BurialRecord[] = [
     plotNumber: 'B-08',
     serviceCharge: 5000,
     hasNamePlate: false,
-    notes: 'Basic Burial service only'
+    notes: 'Basic Burial service only',
+    createdByStaff: 'Ramesh Singh'
   },
   {
     id: 'BUR-1005',
     receiptNo: 'REC-2026-005',
+    locationId: 'LOC-1',
+    locationName: 'South Memorial Gardens (HQ)',
     ownerName: 'Venkatesh Rao',
     ownerPhone: '+91 91234 56789',
     petName: 'Rocky',
@@ -69,7 +178,8 @@ export const initialBurials: BurialRecord[] = [
     plotNumber: 'C-02',
     serviceCharge: 11000,
     hasNamePlate: true,
-    notes: 'Burial + Name Plate'
+    notes: 'Burial + Name Plate',
+    createdByStaff: 'Suresh Kumar'
   }
 ];
 
@@ -77,6 +187,7 @@ export const initialSubscriptions: NamePlateSubscription[] = [
   {
     id: 'SUB-2001',
     burialId: 'BUR-1001',
+    locationId: 'LOC-1',
     tagSerial: 'NPT-88901',
     petName: 'Bruno',
     ownerName: 'Rajesh Sharma',
@@ -88,12 +199,13 @@ export const initialSubscriptions: NamePlateSubscription[] = [
     expiryDate: '2026-11-15',
     status: 'ACTIVE',
     workOrderIssued: true,
-    installedBy: 'Suresh (Ground Staff)',
+    installedBy: 'Suresh (South Staff)',
     installationDate: '2025-11-16'
   },
   {
     id: 'SUB-2002',
     burialId: 'BUR-1002',
+    locationId: 'LOC-1',
     tagSerial: 'NPT-77123',
     petName: 'Whiskers',
     ownerName: 'Priya Verma',
@@ -105,12 +217,13 @@ export const initialSubscriptions: NamePlateSubscription[] = [
     expiryDate: '2025-10-10',
     status: 'EXPIRED',
     workOrderIssued: true,
-    installedBy: 'Ramesh (Ground Staff)',
+    installedBy: 'Suresh (South Staff)',
     installationDate: '2024-10-11'
   },
   {
     id: 'SUB-2003',
     burialId: 'BUR-1003',
+    locationId: 'LOC-2',
     tagSerial: 'NPT-99452',
     petName: 'Max',
     ownerName: 'Amit Patel',
@@ -122,12 +235,13 @@ export const initialSubscriptions: NamePlateSubscription[] = [
     expiryDate: '2027-02-01',
     status: 'ACTIVE',
     workOrderIssued: true,
-    installedBy: 'Suresh (Ground Staff)',
+    installedBy: 'Ramesh (North Staff)',
     installationDate: '2026-02-02'
   },
   {
     id: 'SUB-2005',
     burialId: 'BUR-1005',
+    locationId: 'LOC-1',
     tagSerial: 'NPT-66321',
     petName: 'Rocky',
     ownerName: 'Venkatesh Rao',
@@ -139,7 +253,7 @@ export const initialSubscriptions: NamePlateSubscription[] = [
     expiryDate: '2026-10-25',
     status: 'PENDING_RENEWAL',
     workOrderIssued: true,
-    installedBy: 'Mukesh (Ground Staff)',
+    installedBy: 'Suresh (South Staff)',
     installationDate: '2025-10-26'
   }
 ];
@@ -147,22 +261,24 @@ export const initialSubscriptions: NamePlateSubscription[] = [
 export const initialAuditLogs: AuditLog[] = [
   {
     id: 'AUD-501',
+    locationId: 'LOC-1',
     tagSerial: 'NPT-88901',
     plotSector: 'Sector A',
     plotNumber: 'A-12',
     scannedAt: '2026-10-08 11:30 AM',
-    scannedBy: 'Vikram (Manager)',
+    scannedBy: 'Vikram (Admin)',
     statusResult: 'ACTIVE',
     petName: 'Bruno',
-    actionTaken: 'Verified Legit - No action needed'
+    actionTaken: 'Verified Legit - Paid ₹5,000'
   },
   {
     id: 'AUD-502',
+    locationId: 'LOC-1',
     tagSerial: 'NPT-UNKNOWN-999',
     plotSector: 'Sector C',
     plotNumber: 'C-09',
     scannedAt: '2026-10-09 09:15 AM',
-    scannedBy: 'Vikram (Manager)',
+    scannedBy: 'Vikram (Admin)',
     statusResult: 'UNAUTHORIZED',
     petName: 'Unknown / Fake Plate',
     actionTaken: 'Flagged Illegal Installation - Staff Warning Issued',

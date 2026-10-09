@@ -1,27 +1,42 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BurialRecord, NamePlateSubscription } from '../lib/types';
-import { Receipt, CheckCircle, Printer, X, ShieldCheck, Sparkles, Tag } from 'lucide-react';
+import { BurialRecord, NamePlateSubscription, ServicePackage, AppUser, Location } from '../lib/types';
+import { Receipt, CheckCircle, Printer, X, ShieldCheck, Tag, Building } from 'lucide-react';
 import QRCode from 'qrcode';
 
 interface BookingFormProps {
   onAddBurial: (burial: BurialRecord, subscription?: NamePlateSubscription) => void;
   setActiveTab: (tab: string) => void;
+  servicePackages: ServicePackage[];
+  currentUser: AppUser;
+  locations: Location[];
 }
 
-export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActiveTab }) => {
+export const BookingForm: React.FC<BookingFormProps> = ({
+  onAddBurial,
+  setActiveTab,
+  servicePackages,
+  currentUser,
+  locations,
+}) => {
+  const userLocation = locations.find((l) => l.id === currentUser.assignedLocationId) || locations[0];
+
+  const activeBurialPackages = servicePackages.filter((p) => p.category === 'BURIAL' && p.active);
+  const namePlatePackage = servicePackages.find((p) => p.category === 'NAME_PLATE') || { price: 5000 };
+
+  const [selectedPackageId, setSelectedPackageId] = useState(activeBurialPackages[0]?.id || '');
+  const selectedPackage = servicePackages.find((p) => p.id === selectedPackageId) || activeBurialPackages[0];
+
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
   const [petName, setPetName] = useState('');
   const [petSpecies, setPetSpecies] = useState<'Dog' | 'Cat' | 'Bird' | 'Other'>('Dog');
   const [plotSector, setPlotSector] = useState('Sector A');
   const [plotNumber, setPlotNumber] = useState('A-18');
-  const [serviceCharge, setServiceCharge] = useState(10000);
   const [includeNamePlate, setIncludeNamePlate] = useState(true);
   const [notes, setNotes] = useState('Standard Burial Service + 1-Year Name Plate Subscription');
 
-  // Receipt Modal State
   const [receiptData, setReceiptData] = useState<{
     burial: BurialRecord;
     subscription?: NamePlateSubscription;
@@ -35,9 +50,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
     const receiptNo = `REC-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
     const todayStr = new Date().toISOString().split('T')[0];
 
+    const serviceCharge = selectedPackage ? selectedPackage.price : 8000;
+
     const newBurial: BurialRecord = {
       id: burialId,
       receiptNo,
+      locationId: userLocation.id,
+      locationName: userLocation.name,
       ownerName,
       ownerPhone,
       petName,
@@ -47,7 +66,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
       plotNumber,
       serviceCharge,
       hasNamePlate: includeNamePlate,
-      notes,
+      notes: `${selectedPackage?.name || 'Burial'} - ${notes}`,
+      createdByStaff: currentUser.displayName,
     };
 
     let newSub: NamePlateSubscription | undefined = undefined;
@@ -60,11 +80,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
       nextYear.setFullYear(nextYear.getFullYear() + 1);
       const expiryStr = nextYear.toISOString().split('T')[0];
 
-      // Generate QR Code URL
       const qrPayload = JSON.stringify({
         tagSerial,
         petName,
         ownerName,
+        location: userLocation.name,
         plot: `${plotSector} ${plotNumber}`,
         expiryDate: expiryStr,
         status: 'ACTIVE',
@@ -80,25 +100,25 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
       newSub = {
         id: subId,
         burialId,
+        locationId: userLocation.id,
         tagSerial,
         petName,
         ownerName,
         ownerPhone,
         plotSector,
         plotNumber,
-        amountPaid: 5000,
+        amountPaid: namePlatePackage.price,
         startDate: todayStr,
         expiryDate: expiryStr,
         status: 'ACTIVE',
         workOrderIssued: true,
-        installedBy: 'Pending Ground Assignment',
+        installedBy: currentUser.displayName,
         qrCodeUrl: qrDataUrl,
       };
     }
 
     onAddBurial(newBurial, newSub);
 
-    // Show receipt modal
     setReceiptData({
       burial: newBurial,
       subscription: newSub,
@@ -110,19 +130,29 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
     window.print();
   };
 
+  const totalAmount = (selectedPackage ? selectedPackage.price : 8000) + (includeNamePlate ? namePlatePackage.price : 0);
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Title */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-sm">
+      {/* Title & Branch Location Info */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-inner">
             <Receipt className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-100">New Burial Service & Official Billing</h2>
+            <h2 className="text-xl font-bold text-slate-100">New Service Booking & Official Billing</h2>
             <p className="text-xs text-slate-400">
-              Register burial plot, process payments, and issue tamper-evident QR Name Plate work order.
+              Staff Operator Billing Workflow. Prices populated from Admin Master Catalog.
             </p>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-700 px-3.5 py-2 rounded-xl flex items-center space-x-2 text-xs">
+          <Building className="w-4 h-4 text-emerald-400" />
+          <div>
+            <span className="text-[10px] text-slate-400 block uppercase font-bold">Operating Branch</span>
+            <span className="font-bold text-emerald-300">{userLocation.name}</span>
           </div>
         </div>
       </div>
@@ -132,8 +162,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Owner Details */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
-              <span>Pet Owner Details</span>
+            <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">
+              Pet Owner Details
             </h3>
 
             <div>
@@ -163,8 +193,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
 
           {/* Pet Details */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
-              <span>Pet & Plot Information</span>
+            <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">
+              Pet & Plot Information
             </h3>
 
             <div className="grid grid-cols-2 gap-3">
@@ -197,15 +227,15 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Cemetery Sector *</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Sector *</label>
                 <select
                   value={plotSector}
                   onChange={(e) => setPlotSector(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
                 >
-                  <option value="Sector A">Sector A (Premium)</option>
-                  <option value="Sector B">Sector B (Standard)</option>
-                  <option value="Sector C">Sector C (Standard)</option>
+                  <option value="Sector A">Sector A</option>
+                  <option value="Sector B">Sector B</option>
+                  <option value="Sector C">Sector C</option>
                 </select>
               </div>
 
@@ -224,24 +254,29 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
           </div>
         </div>
 
-        {/* Financial & Subscription Card */}
+        {/* Service Package Selection (Admin Master Pricing) */}
         <div className="border-t border-slate-700 pt-6 space-y-4">
           <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-            Billing & Anti-Fraud Subscription Option
+            Select Admin Approved Service Package
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">Burial Service Fee (INR) *</label>
-              <input
-                type="number"
-                required
-                value={serviceCharge}
-                onChange={(e) => setServiceCharge(Number(e.target.value))}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 font-semibold text-emerald-400"
-              />
+              <label className="block text-xs font-medium text-slate-300 mb-1">Service Package *</label>
+              <select
+                value={selectedPackageId}
+                onChange={(e) => setSelectedPackageId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 font-semibold focus:outline-none focus:border-emerald-500"
+              >
+                {activeBurialPackages.map((pkg) => (
+                  <option key={pkg.id} value={pkg.id}>
+                    {pkg.name} — ₹{pkg.price.toLocaleString('en-IN')}
+                  </option>
+                ))}
+              </select>
             </div>
 
+            {/* Name Plate Subscription Option */}
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex items-start space-x-3">
               <input
                 type="checkbox"
@@ -252,23 +287,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
               />
               <div>
                 <label htmlFor="namePlateCheck" className="text-sm font-bold text-emerald-400 cursor-pointer">
-                  Add Pet Name Plate Subscription (₹5,000 / Year)
+                  Add Pet Name Plate Subscription (₹{namePlatePackage.price.toLocaleString('en-IN')} / Year)
                 </label>
                 <p className="text-xs text-slate-400 mt-1">
-                  Generates tamper-evident Serial Tag & Scannable QR Code. Valid for 1 year with automated annual renewal alerts.
+                  Generates tamper-evident Serial Tag & Scannable QR Code. Valid for 1 year.
                 </p>
               </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Service Notes</label>
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-            />
           </div>
         </div>
 
@@ -277,10 +302,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
           <div>
             <span className="text-xs text-slate-400">Total Payable Amount:</span>
             <div className="text-2xl font-bold text-emerald-400">
-              ₹{(serviceCharge + (includeNamePlate ? 5000 : 0)).toLocaleString('en-IN')}
+              ₹{totalAmount.toLocaleString('en-IN')}
             </div>
             <span className="text-xs text-slate-400">
-              ({serviceCharge} Burial {includeNamePlate ? '+ ₹5,000 Name Plate Subscription' : ''})
+              Processed by operator: <strong>{currentUser.displayName}</strong> ({userLocation.code})
             </span>
           </div>
 
@@ -289,7 +314,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
             className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm transition shadow-lg flex items-center justify-center space-x-2"
           >
             <CheckCircle className="w-5 h-5" />
-            <span>Generate Official Receipt & Work Order</span>
+            <span>Issue Bill & Print QR Work Order Token</span>
           </button>
         </div>
       </form>
@@ -311,7 +336,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
                 🐾
               </div>
               <h2 className="text-xl font-bold text-slate-900">PEACEFUL PAWS PET CREMATORIUM</h2>
-              <p className="text-xs text-slate-500">Official Payment Receipt & Work Order Authorization</p>
+              <p className="text-xs text-slate-600 font-semibold">{receiptData.burial.locationName}</p>
+              <p className="text-[11px] text-slate-500">Official Payment Receipt & Work Order Authorization</p>
               <div className="mt-2 text-xs font-mono bg-slate-100 px-3 py-1 rounded-full inline-block font-semibold">
                 Receipt #: {receiptData.burial.receiptNo}
               </div>
@@ -320,7 +346,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
             {/* Customer & Pet Details */}
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-slate-500 block">Owner Name:</span>
+                <span className="text-slate-500 block">Owner Details:</span>
                 <span className="font-bold text-slate-800">{receiptData.burial.ownerName}</span>
                 <span className="text-slate-500 block mt-1">{receiptData.burial.ownerPhone}</span>
               </div>
@@ -342,7 +368,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   <tr>
-                    <td className="p-2.5 font-medium">Pet Burial & Plot Allocation Service</td>
+                    <td className="p-2.5 font-medium">{receiptData.burial.notes}</td>
                     <td className="p-2.5 text-right font-semibold">₹{receiptData.burial.serviceCharge.toLocaleString('en-IN')}</td>
                   </tr>
                   {receiptData.subscription && (
@@ -353,13 +379,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
                           Serial Tag: {receiptData.subscription.tagSerial} (Valid thru {receiptData.subscription.expiryDate})
                         </span>
                       </td>
-                      <td className="p-2.5 text-right font-semibold text-emerald-900">₹5,000</td>
+                      <td className="p-2.5 text-right font-semibold text-emerald-900">₹{namePlatePackage.price.toLocaleString('en-IN')}</td>
                     </tr>
                   )}
                   <tr className="font-bold bg-slate-50 text-sm">
                     <td className="p-2.5 text-slate-900">Grand Total Paid</td>
                     <td className="p-2.5 text-right text-emerald-600">
-                      ₹{(receiptData.burial.serviceCharge + (receiptData.subscription ? 5000 : 0)).toLocaleString('en-IN')}
+                      ₹{(receiptData.burial.serviceCharge + (receiptData.subscription ? namePlatePackage.price : 0)).toLocaleString('en-IN')}
                     </td>
                   </tr>
                 </tbody>
@@ -376,10 +402,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
                     <span>Ground Installation Authorized</span>
                   </div>
                   <p className="text-slate-600 text-[11px]">
-                    Ground staff must mount plate with Serial Sticker <strong className="font-mono">{receiptData.subscription.tagSerial}</strong>.
+                    Staff <strong className="font-semibold">{currentUser.displayName}</strong> authorized installation with Serial Sticker <strong className="font-mono">{receiptData.subscription.tagSerial}</strong>.
                   </p>
                   <span className="inline-block bg-emerald-600 text-white font-mono text-[10px] px-2 py-0.5 rounded font-bold">
-                    System Token Verified
+                    Cleared in Central CRM
                   </span>
                 </div>
               </div>
@@ -401,7 +427,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ onAddBurial, setActive
                 }}
                 className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition"
               >
-                View Subscriptions List
+                View Subscriptions
               </button>
             </div>
           </div>

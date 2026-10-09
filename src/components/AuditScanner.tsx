@@ -58,6 +58,7 @@ export const AuditScanner: React.FC<AuditScannerProps> = ({ subscriptions, onLog
     // Automatically record in audit log
     const newLog: AuditLog = {
       id: `AUD-${Math.floor(100 + Math.random() * 900)}`,
+      locationId: matchedSub ? matchedSub.locationId : 'LOC-1',
       tagSerial: serial,
       plotSector: matchedSub ? matchedSub.plotSector : sectorInput,
       plotNumber: matchedSub ? matchedSub.plotNumber : plotInput,
