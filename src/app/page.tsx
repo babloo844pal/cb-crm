@@ -35,6 +35,7 @@ import { StaffManager } from '../components/StaffManager';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   // Master State
   const [locations, setLocations] = useState<Location[]>(initialLocations);
@@ -130,7 +131,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex font-sans antialiased">
-      {/* Sidebar Navigation */}
+      {/* Responsive Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -139,6 +140,8 @@ export default function Home() {
         selectedLocationFilter={selectedLocationFilter}
         setSelectedLocationFilter={setSelectedLocationFilter}
         expiringCount={expiringCount}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
       />
 
       {/* Main Content Area */}
@@ -155,9 +158,11 @@ export default function Home() {
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           expiringCount={expiringCount}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
         />
 
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-6 md:p-8 max-w-7xl w-full mx-auto space-y-4 sm:space-y-6 overflow-y-auto">
           {activeTab === 'dashboard' && (
             <Dashboard
               bookings={filteredBookings}
@@ -220,7 +225,7 @@ export default function Home() {
           )}
         </main>
 
-        <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 font-medium">
+        <footer className="bg-white border-t border-slate-200 py-3 sm:py-4 text-center text-[11px] sm:text-xs text-slate-500 font-medium px-4">
           Peaceful Paws CRM • Multi-Branch Pet Crematorium & Cinema Plot Seat Automation System
         </footer>
       </div>
