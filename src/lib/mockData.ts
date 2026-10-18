@@ -96,6 +96,9 @@ export const initialServices: ServiceItem[] = [
     description: 'Ground preparation, grave digging, basic casket lining, and burial ceremony.',
     price: 8000,
     category: 'BURIAL',
+    active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
   {
     id: 'SRV-102',
@@ -104,6 +107,9 @@ export const initialServices: ServiceItem[] = [
     price: 5000,
     category: 'NAME_PLATE',
     isSubscription: true,
+    active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
   {
     id: 'SRV-103',
@@ -111,6 +117,9 @@ export const initialServices: ServiceItem[] = [
     description: 'Private cremation with ceramic keepsake urn.',
     price: 9500,
     category: 'CREMATION',
+    active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
   {
     id: 'SRV-104',
@@ -119,6 +128,9 @@ export const initialServices: ServiceItem[] = [
     price: 3000,
     category: 'MAINTENANCE',
     isSubscription: true,
+    active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
   {
     id: 'SRV-105',
@@ -126,6 +138,9 @@ export const initialServices: ServiceItem[] = [
     description: 'Handcrafted teakwood casket with velvet lining.',
     price: 4500,
     category: 'ADDON',
+    active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
 ];
 
@@ -140,6 +155,8 @@ export const initialCombos: ComboPackage[] = [
     savings: 1500,
     includesNamePlate: true,
     active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
   {
     id: 'CMB-002',
@@ -151,6 +168,8 @@ export const initialCombos: ComboPackage[] = [
     savings: 3000,
     includesNamePlate: true,
     active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
   {
     id: 'CMB-003',
@@ -162,6 +181,8 @@ export const initialCombos: ComboPackage[] = [
     savings: 1500,
     includesNamePlate: true,
     active: true,
+    effectiveFrom: '2026-01-01',
+    effectiveTo: '2026-12-31',
   },
 ];
 

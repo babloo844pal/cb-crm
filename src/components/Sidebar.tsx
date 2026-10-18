@@ -91,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       menuGroups.push({
         title: 'ADMIN SETTINGS',
         items: [
+          { id: 'branches', label: 'Branch Locations Master', icon: Building2 },
           { id: 'packages', label: 'Service & Combo Packages', icon: Package },
           { id: 'staff', label: 'Staff & Branch Invites', icon: Users },
         ],

@@ -32,6 +32,8 @@ export interface ServiceItem {
   isSubscription?: boolean;
   subscriptionYears?: number;
   active?: boolean;
+  effectiveFrom?: string;
+  effectiveTo?: string;
 }
 
 export type ServicePackage = ServiceItem;
@@ -46,6 +48,8 @@ export interface ComboPackage {
   savings: number;
   includesNamePlate: boolean;
   active: boolean;
+  effectiveFrom?: string;
+  effectiveTo?: string;
 }
 
 export interface CustomerBooking {

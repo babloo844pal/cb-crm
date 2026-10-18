@@ -32,12 +32,13 @@ import { NamePlateSubscriptions } from '../components/NamePlateSubscriptions';
 import { AuditScanner } from '../components/AuditScanner';
 import { ServicePackageAdmin } from '../components/ServicePackageAdmin';
 import { StaffManager } from '../components/StaffManager';
+import { BranchLocationAdmin } from '../components/BranchLocationAdmin';
 
 export default function Home() {
   // Master State
-  const [locations] = useState<Location[]>(initialLocations);
+  const [locations, setLocations] = useState<Location[]>(initialLocations);
   const [users, setUsers] = useState<AppUser[]>(initialUsers);
-  const [services] = useState<ServiceItem[]>(initialServices);
+  const [services, setServices] = useState<ServiceItem[]>(initialServices);
   const [combos, setCombos] = useState<ComboPackage[]>(initialCombos);
 
   // Active User & Location Filter State
@@ -62,11 +63,11 @@ export default function Home() {
     if (currentUser.role === 'OPERATOR') {
       setActiveTab('booking');
     } else if (currentUser.role === 'MANAGER') {
-      if (activeTab === 'packages' || activeTab === 'staff') {
+      if (activeTab === 'packages' || activeTab === 'staff' || activeTab === 'branches') {
         setActiveTab('dashboard');
       }
     }
-  }, [currentUser.role]);
+  }, [currentUser.role, activeTab]);
 
   // Effective location filter:
   // - Admin can view ALL or any specific branch.
@@ -162,8 +163,28 @@ export default function Home() {
     setAuditLogs((prev) => [log, ...prev]);
   };
 
+  const handleAddLocation = (newLoc: Location) => {
+    setLocations((prev) => [...prev, newLoc]);
+  };
+
+  const handleUpdateLocation = (updatedLoc: Location) => {
+    setLocations((prev) => prev.map((l) => (l.id === updatedLoc.id ? updatedLoc : l)));
+  };
+
+  const handleAddService = (newSrv: ServiceItem) => {
+    setServices((prev) => [...prev, newSrv]);
+  };
+
+  const handleUpdateService = (updatedSrv: ServiceItem) => {
+    setServices((prev) => prev.map((s) => (s.id === updatedSrv.id ? updatedSrv : s)));
+  };
+
   const handleAddCombo = (newCombo: ComboPackage) => {
-    setCombos((prev) => [newCombo, ...prev]);
+    setCombos((prev) => [...prev, newCombo]);
+  };
+
+  const handleUpdateCombo = (updatedCombo: ComboPackage) => {
+    setCombos((prev) => prev.map((c) => (c.id === updatedCombo.id ? updatedCombo : c)));
   };
 
   const handleInviteStaff = (newUser: AppUser) => {
@@ -184,7 +205,7 @@ export default function Home() {
     if (currentUser.role === 'OPERATOR' && tab !== 'booking') {
       return; // Operator cannot access other tabs
     }
-    if (currentUser.role === 'MANAGER' && (tab === 'packages' || tab === 'staff')) {
+    if (currentUser.role === 'MANAGER' && (tab === 'packages' || tab === 'staff' || tab === 'branches')) {
       return; // Manager cannot access admin master tabs
     }
     if (tab === 'subscriptions' && activeTab !== 'subscriptions') {
@@ -286,12 +307,24 @@ export default function Home() {
             />
           )}
 
-          {/* Packages Master (Admin only) */}
+          {/* Branch Locations Master (Admin only) */}
+          {activeTab === 'branches' && currentUser.role === 'ADMIN' && (
+            <BranchLocationAdmin
+              locations={locations}
+              onAddLocation={handleAddLocation}
+              onUpdateLocation={handleUpdateLocation}
+            />
+          )}
+
+          {/* Packages & Services Master (Admin only) */}
           {activeTab === 'packages' && currentUser.role === 'ADMIN' && (
             <ServicePackageAdmin
               services={services}
               combos={combos}
+              onAddService={handleAddService}
+              onUpdateService={handleUpdateService}
               onAddCombo={handleAddCombo}
+              onUpdateCombo={handleUpdateCombo}
             />
           )}
 

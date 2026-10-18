@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Package,
   Users,
+  Building2,
   Menu,
   X,
   HeartHandshake,
@@ -87,6 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
 
     if (isAdmin) {
       navItems.push(
+        { id: 'branches', label: 'Branches', icon: Building2 },
         { id: 'packages', label: 'Packages', icon: Package },
         { id: 'staff', label: 'Staff', icon: Users }
       );
