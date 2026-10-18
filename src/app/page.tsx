@@ -25,7 +25,7 @@ import {
 
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
-import { Dashboard } from '../components/Dashboard';
+import { Dashboard, SubscriptionFilterPeriod } from '../components/Dashboard';
 import { CustomerBookingForm } from '../components/CustomerBooking';
 import { CinemaPlotView } from '../components/CinemaPlotView';
 import { NamePlateSubscriptions } from '../components/NamePlateSubscriptions';
@@ -36,11 +36,12 @@ import { StaffManager } from '../components/StaffManager';
 export default function Home() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [subscriptionFilter, setSubscriptionFilter] = useState<SubscriptionFilterPeriod>('ALL');
 
   // Master State
-  const [locations, setLocations] = useState<Location[]>(initialLocations);
+  const [locations] = useState<Location[]>(initialLocations);
   const [users, setUsers] = useState<AppUser[]>(initialUsers);
-  const [services, setServices] = useState<ServiceItem[]>(initialServices);
+  const [services] = useState<ServiceItem[]>(initialServices);
   const [combos, setCombos] = useState<ComboPackage[]>(initialCombos);
 
   // Active User & Location Filter State
@@ -50,8 +51,9 @@ export default function Home() {
 
   // Transaction Records State
   const [bookings, setBookings] = useState<CustomerBooking[]>(initialBookings);
-  const [subscriptions, setSubscriptions] = useState<NamePlateSubscription[]>(initialSubscriptions);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(initialAuditLogs);
+  const [subscriptions, setSubscriptions] =
+    useState<NamePlateSubscription[]>(initialSubscriptions);
+  const [, setAuditLogs] = useState<AuditLog[]>(initialAuditLogs);
   const [stats, setStats] = useState<RevenueStats>(initialStats);
 
   // Effective location filter
@@ -60,16 +62,25 @@ export default function Home() {
       ? selectedLocationFilter
       : currentUser.assignedLocationId || 'LOC-1';
 
+  // Global search helper
+  const q = searchTerm.toLowerCase().trim();
+
   // Filtered datasets
-  const filteredBookings = bookings.filter(
-    (b) => activeLocationId === 'ALL' || b.locationId === activeLocationId
-  );
-  const filteredSubscriptions = subscriptions.filter(
-    (s) => activeLocationId === 'ALL' || s.locationId === activeLocationId
-  );
-  const filteredAuditLogs = auditLogs.filter(
-    (a) => activeLocationId === 'ALL' || a.locationId === activeLocationId
-  );
+  const filteredBookings = bookings.filter((b) => {
+    const matchesLoc = activeLocationId === 'ALL' || b.locationId === activeLocationId;
+    const matchesQuery =
+      !q ||
+      b.customerName.toLowerCase().includes(q) ||
+      b.petName.toLowerCase().includes(q) ||
+      b.plotNumber.toLowerCase().includes(q) ||
+      b.receiptNo.toLowerCase().includes(q);
+    return matchesLoc && matchesQuery;
+  });
+
+  const filteredSubscriptions = subscriptions.filter((s) => {
+    const matchesLoc = activeLocationId === 'ALL' || s.locationId === activeLocationId;
+    return matchesLoc;
+  });
 
   const expiringCount = filteredSubscriptions.filter((s) => s.daysUntilExpiry <= 30).length;
 
@@ -79,7 +90,6 @@ export default function Home() {
     if (newSub) {
       setSubscriptions((prev) => [newSub, ...prev]);
     }
-    // Update stats
     setStats((prev) => ({
       ...prev,
       todayCollection: prev.todayCollection + newBooking.totalAmount,
@@ -129,12 +139,24 @@ export default function Home() {
     setUsers((prev) => prev.filter((u) => u.uid !== uid));
   };
 
+  const handleNavigateSubscriptions = (filter: SubscriptionFilterPeriod) => {
+    setSubscriptionFilter(filter);
+    setActiveTab('subscriptions');
+  };
+
+  const handleTabChange = (tab: string) => {
+    if (tab === 'subscriptions' && activeTab !== 'subscriptions') {
+      setSubscriptionFilter('ALL');
+    }
+    setActiveTab(tab);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex font-sans antialiased">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] flex font-sans antialiased">
       {/* Responsive Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         currentUser={currentUser}
         locations={locations}
         selectedLocationFilter={selectedLocationFilter}
@@ -148,7 +170,7 @@ export default function Home() {
       <div className="flex-1 flex flex-col min-w-0">
         <Header
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           currentUser={currentUser}
           setCurrentUser={setCurrentUser}
           availableUsers={users}
@@ -169,14 +191,20 @@ export default function Home() {
               subscriptions={filteredSubscriptions}
               locations={locations}
               stats={stats}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
+              onNavigateSubscriptions={handleNavigateSubscriptions}
+              onSelectLocationFromDashboard={(locId) => {
+                if (currentUser.role === 'ADMIN') {
+                  setSelectedLocationFilter(locId);
+                }
+              }}
             />
           )}
 
           {activeTab === 'booking' && (
             <CustomerBookingForm
               onAddBooking={handleAddBooking}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
               services={services}
               combos={combos}
               locations={locations}
@@ -188,7 +216,7 @@ export default function Home() {
             <CinemaPlotView
               bookings={filteredBookings}
               subscriptions={filteredSubscriptions}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
             />
           )}
 
@@ -196,6 +224,8 @@ export default function Home() {
             <NamePlateSubscriptions
               subscriptions={filteredSubscriptions}
               onRenew={handleRenewSubscription}
+              initialFilterPeriod={subscriptionFilter}
+              globalSearchTerm={searchTerm}
             />
           )}
 
@@ -203,7 +233,7 @@ export default function Home() {
             <AuditScanner
               subscriptions={filteredSubscriptions}
               onLogAudit={handleLogAudit}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
             />
           )}
 
@@ -225,7 +255,7 @@ export default function Home() {
           )}
         </main>
 
-        <footer className="bg-white border-t border-slate-200 py-3 sm:py-4 text-center text-[11px] sm:text-xs text-slate-500 font-medium px-4">
+        <footer className="bg-white/90 backdrop-blur-md border-t border-[#E2E8F0] py-3.5 sm:py-4 text-center text-xs text-[#64748B] font-medium px-4">
           Peaceful Paws CRM • Multi-Branch Pet Crematorium & Cinema Plot Seat Automation System
         </footer>
       </div>

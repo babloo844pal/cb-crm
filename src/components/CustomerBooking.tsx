@@ -1,8 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CustomerBooking, ServiceItem, ComboPackage, Location, AppUser, NamePlateSubscription } from '../lib/types';
-import { UserPlus, Receipt, CheckCircle, QrCode, Send, Printer, X, ShieldCheck, Tag, Sparkles, Building, Phone } from 'lucide-react';
+import {
+  CustomerBooking,
+  ServiceItem,
+  ComboPackage,
+  Location,
+  AppUser,
+  NamePlateSubscription,
+} from '../lib/types';
+import {
+  UserPlus,
+  Receipt,
+  CheckCircle2,
+  QrCode,
+  Send,
+  Printer,
+  X,
+  ShieldCheck,
+  Tag,
+  Sparkles,
+  Building2,
+  HeartHandshake,
+  Flame,
+} from 'lucide-react';
 import QRCode from 'qrcode';
 
 interface CustomerBookingProps {
@@ -22,7 +43,8 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
   locations,
   currentUser,
 }) => {
-  const userLocation = locations.find((l) => l.id === currentUser.assignedLocationId) || locations[0];
+  const userLocation =
+    locations.find((l) => l.id === currentUser.assignedLocationId) || locations[0];
 
   // Customer Form State
   const [customerName, setCustomerName] = useState('');
@@ -38,7 +60,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
 
   // Plot Details State
   const [plotSector, setPlotSector] = useState('Sector A');
-  const [plotRow, setPlotRow] = useState('Row A1');
+  const [plotRow, setPlotRow] = useState('A1');
   const [plotSeat, setPlotSeat] = useState('05');
 
   // Package Selection State (Combo vs Standalone)
@@ -47,7 +69,9 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(['SRV-101', 'SRV-102']);
 
   // Payment Options State
-  const [paymentMethod, setPaymentMethod] = useState<'QR_CODE' | 'CASH' | 'WHATSAPP_PAY_LINK' | 'ONLINE_UPI'>('QR_CODE');
+  const [paymentMethod, setPaymentMethod] = useState<
+    'QR_CODE' | 'CASH' | 'WHATSAPP_PAY_LINK' | 'ONLINE_UPI'
+  >('QR_CODE');
 
   // Modal State
   const [receiptModal, setReceiptModal] = useState<{
@@ -58,7 +82,6 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
 
   const selectedCombo = combos.find((c) => c.id === selectedComboId) || combos[0];
 
-  // Calculate total amount
   let totalAmount = 0;
   let hasNamePlate = false;
 
@@ -85,7 +108,8 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
     const bookingId = `BKG-${Math.floor(1000 + Math.random() * 9000)}`;
     const receiptNo = `REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const todayStr = new Date().toISOString().split('T')[0];
-    const fullPlotNum = `${plotRow}-${plotSeat}`;
+    const cleanRow = plotRow.replace('Row ', '');
+    const fullPlotNum = `${cleanRow}-${plotSeat}`;
 
     const newBooking: CustomerBooking = {
       id: bookingId,
@@ -101,9 +125,10 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
       petBreed,
       petAge,
       plotSector,
-      plotRow,
+      plotRow: `Row ${cleanRow}`,
       plotNumber: fullPlotNum,
-      selectedServiceIds: selectionType === 'STANDALONE' ? selectedServiceIds : selectedCombo.bundledServiceIds,
+      selectedServiceIds:
+        selectionType === 'STANDALONE' ? selectedServiceIds : selectedCombo.bundledServiceIds,
       selectedComboPackageId: selectionType === 'COMBO' ? selectedComboId : undefined,
       totalAmount,
       paymentMethod,
@@ -172,113 +197,158 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Title & Location Header */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-md">
+      <div className="bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center space-x-3.5">
+          <div className="w-12 h-12 bg-[#2563EB] text-white rounded-xl shadow-xs flex items-center justify-center shrink-0">
             <UserPlus className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900">New Customer Registration & Billing</h2>
-            <p className="text-xs text-slate-500">
-              Register customer, select burial/cremation package, generate instant payment QR or WhatsApp link.
+            <h2 className="text-lg sm:text-xl font-bold text-[#1E293B]">
+              New Customer Registration & Billing
+            </h2>
+            <p className="text-xs text-[#475569] mt-0.5">
+              Register pet owner, select burial/cremation package, and generate instant QR invoice or WhatsApp link.
             </p>
           </div>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 px-4 py-2 rounded-xl text-xs flex items-center space-x-2">
-          <Building className="w-4 h-4 text-emerald-600" />
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] px-4 py-2.5 rounded-xl text-xs flex items-center space-x-2.5 self-start sm:self-center">
+          <Building2 className="w-4 h-4 text-[#2563EB] shrink-0" />
           <div>
-            <span className="text-[10px] text-slate-400 block uppercase font-bold">Branch Office</span>
-            <span className="font-extrabold text-slate-900">{userLocation.name}</span>
+            <span className="text-[10px] text-[#64748B] block uppercase font-bold tracking-wider">
+              Branch Office
+            </span>
+            <span className="font-bold text-[#1E293B]">{userLocation.name}</span>
           </div>
         </div>
       </div>
 
       {/* Main Registration Form */}
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-5 sm:p-6 shadow-xs space-y-6"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Customer Details */}
           <div className="space-y-4">
-            <h3 className="text-xs font-extrabold text-emerald-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-bold text-[#2563EB] uppercase tracking-wider border-b border-[#E2E8F0] pb-2">
               1. Customer Personal Information
             </h3>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Customer Full Name *</label>
+              <label
+                htmlFor="cust-name"
+                className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+              >
+                Customer Full Name *
+              </label>
               <input
+                id="cust-name"
                 type="text"
                 required
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="e.g. Ramesh Kumar"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Contact Phone *</label>
+                <label
+                  htmlFor="cust-phone"
+                  className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+                >
+                  Contact Phone *
+                </label>
                 <input
+                  id="cust-phone"
                   type="tel"
                   required
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-mono font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp Number *</label>
+                <label
+                  htmlFor="cust-whatsapp"
+                  className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+                >
+                  WhatsApp Number *
+                </label>
                 <input
+                  id="cust-whatsapp"
                   type="tel"
                   required
                   value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-mono font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Full Postal Address *</label>
+              <label
+                htmlFor="cust-address"
+                className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+              >
+                Full Postal Address *
+              </label>
               <textarea
+                id="cust-address"
                 rows={2}
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Flat/House No., Street, City..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
               />
             </div>
           </div>
 
           {/* Pet & Plot Details */}
           <div className="space-y-4">
-            <h3 className="text-xs font-extrabold text-emerald-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+            <h3 className="text-xs font-bold text-[#2563EB] uppercase tracking-wider border-b border-[#E2E8F0] pb-2">
               2. Pet & Cinema Hall Plot Selection
             </h3>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Pet Name *</label>
+                <label
+                  htmlFor="pet-name"
+                  className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+                >
+                  Pet Name *
+                </label>
                 <input
+                  id="pet-name"
                   type="text"
                   required
                   value={petName}
                   onChange={(e) => setPetName(e.target.value)}
                   placeholder="e.g. Shadow"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Pet Type *</label>
+                <label
+                  htmlFor="pet-type"
+                  className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+                >
+                  Pet Type *
+                </label>
                 <select
+                  id="pet-type"
                   value={petType}
-                  onChange={(e) => setPetType(e.target.value as any)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  onChange={(e) =>
+                    setPetType(e.target.value as 'Dog' | 'Cat' | 'Bird' | 'Other')
+                  }
+                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white cursor-pointer"
                 >
                   <option value="Dog">Dog</option>
                   <option value="Cat">Cat</option>
@@ -288,38 +358,56 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Breed</label>
+                <label
+                  htmlFor="pet-breed"
+                  className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+                >
+                  Breed
+                </label>
                 <input
+                  id="pet-breed"
                   type="text"
                   value={petBreed}
                   onChange={(e) => setPetBreed(e.target.value)}
                   placeholder="e.g. Golden Retriever"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Age</label>
+                <label
+                  htmlFor="pet-age"
+                  className="block text-xs font-semibold text-[#1E293B] mb-1.5"
+                >
+                  Age
+                </label>
                 <input
+                  id="pet-age"
                   type="text"
                   value={petAge}
                   onChange={(e) => setPetAge(e.target.value)}
                   placeholder="e.g. 7 Years"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                 />
               </div>
             </div>
 
             {/* Cinema Plot Seat Selection Inputs */}
-            <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-3 gap-3 bg-[#F8FAFC] p-3.5 rounded-xl border border-[#E2E8F0]">
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Sector</label>
+                <label
+                  htmlFor="plot-sector"
+                  className="block text-[11px] font-bold text-[#475569] mb-1"
+                >
+                  Sector
+                </label>
                 <select
+                  id="plot-sector"
                   value={plotSector}
                   onChange={(e) => setPlotSector(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                  className="w-full min-h-[38px] bg-white border border-[#CBD5E1] rounded-lg px-2 py-1 text-xs font-bold text-[#1E293B] cursor-pointer"
                 >
                   <option value="Sector A">Sector A</option>
                   <option value="Sector B">Sector B</option>
@@ -328,29 +416,41 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Row</label>
+                <label
+                  htmlFor="plot-row"
+                  className="block text-[11px] font-bold text-[#475569] mb-1"
+                >
+                  Row
+                </label>
                 <select
+                  id="plot-row"
                   value={plotRow}
                   onChange={(e) => setPlotRow(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                  className="w-full min-h-[38px] bg-white border border-[#CBD5E1] rounded-lg px-2 py-1 text-xs font-bold text-[#1E293B] cursor-pointer"
                 >
-                  <option value="Row A1">Row A1</option>
-                  <option value="Row A2">Row A2</option>
-                  <option value="Row A3">Row A3</option>
-                  <option value="Row B1">Row B1</option>
-                  <option value="Row B2">Row B2</option>
+                  <option value="A1">Row A1</option>
+                  <option value="A2">Row A2</option>
+                  <option value="A3">Row A3</option>
+                  <option value="B1">Row B1</option>
+                  <option value="B2">Row B2</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Seat #</label>
+                <label
+                  htmlFor="plot-seat"
+                  className="block text-[11px] font-bold text-[#475569] mb-1"
+                >
+                  Seat #
+                </label>
                 <input
+                  id="plot-seat"
                   type="text"
                   required
                   value={plotSeat}
                   onChange={(e) => setPlotSeat(e.target.value)}
                   placeholder="05"
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-800"
+                  className="w-full min-h-[38px] bg-white border border-[#CBD5E1] rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-[#1E293B]"
                 />
               </div>
             </div>
@@ -358,35 +458,36 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         </div>
 
         {/* Services & Combo Package Selection Section */}
-        <div className="border-t border-slate-100 pt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-extrabold text-emerald-700 uppercase tracking-wider">
+        <div className="border-t border-[#E2E8F0] pt-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h3 className="text-xs font-bold text-[#2563EB] uppercase tracking-wider">
               3. Service Package & Combo Selection
             </h3>
 
             {/* Toggle Combo vs Standalone */}
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <div className="flex bg-[#F1F5F9] p-1 rounded-xl border border-[#E2E8F0] self-start">
               <button
                 type="button"
                 onClick={() => setSelectionType('COMBO')}
-                className={`px-3 py-1 rounded-lg text-xs font-extrabold transition ${
+                className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
                   selectionType === 'COMBO'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'text-[#475569] hover:text-[#1E293B]'
                 }`}
               >
-                🔥 Admin Combo Packages (Recommended)
+                <Flame className="w-3.5 h-3.5" />
+                <span>Admin Combo Packages</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectionType('STANDALONE')}
-                className={`px-3 py-1 rounded-lg text-xs font-extrabold transition ${
+                className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   selectionType === 'STANDALONE'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'text-[#475569] hover:text-[#1E293B]'
                 }`}
               >
-                Custom Service Checkbox List
+                Custom Service Checkboxes
               </button>
             </div>
           </div>
@@ -397,42 +498,55 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
               {combos.map((combo) => {
                 const isSelected = selectedComboId === combo.id;
                 return (
-                  <div
+                  <button
                     key={combo.id}
+                    type="button"
                     onClick={() => setSelectedComboId(combo.id)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs flex flex-col justify-between ${
+                    className={`text-left p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-2xs flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-emerald-50/70 border-emerald-600 ring-2 ring-emerald-500/20'
-                        : 'bg-white border-slate-200 hover:border-slate-300'
+                        ? 'bg-[#EFF6FF]/90 border-[#2563EB] ring-2 ring-[#2563EB]/20'
+                        : 'bg-white border-[#E2E8F0] hover:border-[#CBD5E1]'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-mono">
                           Save ₹{combo.savings}
                         </span>
                         {combo.includesNamePlate && (
-                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded flex items-center space-x-1">
-                            <Tag className="w-3 h-3 text-amber-500" />
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                            <Tag className="w-3 h-3 text-amber-600" />
                             <span>Name Plate Included</span>
                           </span>
                         )}
                       </div>
 
-                      <h4 className="font-extrabold text-slate-900 text-sm">{combo.packageName}</h4>
-                      <p className="text-xs text-slate-500 mt-1">{combo.description}</p>
+                      <h4 className="font-bold text-[#1E293B] text-sm">{combo.packageName}</h4>
+                      <p className="text-xs text-[#475569] mt-1 leading-relaxed">
+                        {combo.description}
+                      </p>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                    <div className="mt-4 pt-3 border-t border-[#E2E8F0] flex items-center justify-between w-full">
                       <div>
-                        <span className="text-[10px] text-slate-400 line-through">₹{combo.totalOriginalPrice}</span>
-                        <div className="text-lg font-black text-emerald-700">₹{combo.comboPrice.toLocaleString('en-IN')}</div>
+                        <span className="text-[10px] text-[#64748B] line-through font-mono">
+                          ₹{combo.totalOriginalPrice.toLocaleString('en-IN')}
+                        </span>
+                        <div className="text-lg font-extrabold text-[#2563EB] font-mono">
+                          ₹{combo.comboPrice.toLocaleString('en-IN')}
+                        </div>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                        {isSelected ? '✓ Selected' : 'Select'}
+                      <span
+                        className={`text-xs font-bold px-3 py-1.5 rounded-lg ${
+                          isSelected
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-[#F1F5F9] text-[#475569]'
+                        }`}
+                      >
+                        {isSelected ? 'Selected' : 'Select'}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -442,28 +556,31 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
               {services.map((srv) => {
                 const checked = selectedServiceIds.includes(srv.id);
                 return (
-                  <div
+                  <label
                     key={srv.id}
-                    onClick={() => toggleServiceId(srv.id)}
-                    className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
-                      checked ? 'bg-emerald-50/80 border-emerald-500' : 'bg-white border-slate-200 hover:bg-slate-50'
+                    className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                      checked
+                        ? 'bg-[#EFF6FF]/80 border-[#2563EB]'
+                        : 'bg-white border-[#E2E8F0] hover:bg-[#F8FAFC]'
                     }`}
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 pr-2">
                       <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() => {}}
-                        className="h-4 w-4 text-emerald-600 rounded"
+                        onChange={() => toggleServiceId(srv.id)}
+                        className="h-4 w-4 accent-[#2563EB] rounded cursor-pointer"
                       />
                       <div>
-                        <span className="font-bold text-xs text-slate-900 block">{srv.name}</span>
-                        <span className="text-[11px] text-slate-500">{srv.description}</span>
+                        <span className="font-bold text-xs text-[#1E293B] block">{srv.name}</span>
+                        <span className="text-[11px] text-[#64748B]">{srv.description}</span>
                       </div>
                     </div>
 
-                    <span className="font-extrabold text-xs text-slate-900">₹{srv.price.toLocaleString('en-IN')}</span>
-                  </div>
+                    <span className="font-bold text-xs text-[#1E293B] font-mono shrink-0">
+                      ₹{srv.price.toLocaleString('en-IN')}
+                    </span>
+                  </label>
                 );
               })}
             </div>
@@ -471,14 +588,14 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         </div>
 
         {/* Payment Method Selection */}
-        <div className="border-t border-slate-100 pt-6 space-y-4">
-          <h3 className="text-xs font-extrabold text-emerald-700 uppercase tracking-wider">
+        <div className="border-t border-[#E2E8F0] pt-6 space-y-4">
+          <h3 className="text-xs font-bold text-[#2563EB] uppercase tracking-wider">
             4. Payment Method & Billing Dispatch
           </h3>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { id: 'QR_CODE', label: 'Instant Payment QR Code', icon: QrCode },
+              { id: 'QR_CODE', label: 'Instant Payment QR', icon: QrCode },
               { id: 'WHATSAPP_PAY_LINK', label: 'WhatsApp Pay Link', icon: Send },
               { id: 'CASH', label: 'Cash / Counter', icon: Receipt },
               { id: 'ONLINE_UPI', label: 'Online Bank UPI', icon: Sparkles },
@@ -489,15 +606,19 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                 <button
                   key={method.id}
                   type="button"
-                  onClick={() => setPaymentMethod(method.id as any)}
-                  className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center space-y-1.5 ${
+                  onClick={() =>
+                    setPaymentMethod(
+                      method.id as 'QR_CODE' | 'CASH' | 'WHATSAPP_PAY_LINK' | 'ONLINE_UPI'
+                    )
+                  }
+                  className={`min-h-[64px] p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
-                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-xs'
+                      : 'bg-white border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC] hover:text-[#1E293B]'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="text-xs font-extrabold">{method.label}</span>
+                  <span className="text-xs font-bold">{method.label}</span>
                 </button>
               );
             })}
@@ -505,20 +626,24 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         </div>
 
         {/* Total Price Bar & Submit */}
-        <div className="bg-slate-900 text-white rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+        <div className="bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs text-slate-400 font-bold block">Total Amount Payable</span>
-            <div className="text-3xl font-black text-emerald-400">₹{totalAmount.toLocaleString('en-IN')}</div>
-            <span className="text-xs text-slate-300 mt-0.5 block">
-              Customer: {customerName || 'Pending'} ({whatsappNumber || 'No WhatsApp'})
+            <span className="text-xs text-[#64748B] font-bold uppercase tracking-wider block">
+              Total Amount Payable
+            </span>
+            <div className="text-3xl font-extrabold text-[#1E293B] font-mono mt-0.5">
+              ₹{totalAmount.toLocaleString('en-IN')}
+            </div>
+            <span className="text-xs text-[#475569] mt-0.5 block">
+              Customer: <strong>{customerName || 'Pending Entry'}</strong> ({whatsappNumber || 'No WhatsApp'})
             </span>
           </div>
 
           <button
             type="submit"
-            className="w-full sm:w-auto px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm rounded-xl transition shadow-lg flex items-center justify-center space-x-2"
+            className="w-full sm:w-auto min-h-[48px] px-7 py-3.5 bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
           >
-            <CheckCircle className="w-5 h-5 text-slate-950" />
+            <CheckCircle2 className="w-5 h-5" />
             <span>Complete Booking & Generate Invoice</span>
           </button>
         </div>
@@ -526,73 +651,90 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
 
       {/* Invoice & Payment Modal */}
       {receiptModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white text-slate-900 rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white text-[#1E293B] border border-[#E2E8F0] rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl relative">
             <button
+              type="button"
               onClick={() => setReceiptModal(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1"
+              aria-label="Close invoice modal"
+              className="absolute top-4 right-4 text-[#64748B] hover:text-[#1E293B] p-1.5 rounded-xl hover:bg-[#F1F5F9] cursor-pointer"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
 
-            <div className="text-center border-b border-slate-100 pb-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 font-black text-2xl flex items-center justify-center mx-auto mb-2">
-                🐾
+            <div className="text-center border-b border-[#E2E8F0] pb-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center mx-auto mb-2.5">
+                <HeartHandshake className="w-6 h-6" />
               </div>
-              <h2 className="text-xl font-extrabold text-slate-900">PEACEFUL PAWS MEMORIAL</h2>
-              <p className="text-xs text-slate-500 font-bold">{receiptModal.booking.locationName}</p>
-              <div className="mt-2 text-xs font-mono bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full inline-block font-extrabold">
+              <h2 className="text-lg font-extrabold text-[#1E293B]">PEACEFUL PAWS MEMORIAL</h2>
+              <p className="text-xs text-[#475569] font-semibold">
+                {receiptModal.booking.locationName}
+              </p>
+              <div className="mt-2 text-xs font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full inline-block font-bold">
                 Receipt #{receiptModal.booking.receiptNo}
               </div>
             </div>
 
             {/* Customer Details */}
-            <div className="bg-slate-50 p-4 rounded-2xl text-xs space-y-2 border border-slate-200">
+            <div className="bg-[#F8FAFC] p-4 rounded-2xl text-xs space-y-2.5 border border-[#E2E8F0]">
               <div className="flex justify-between">
-                <span className="text-slate-500">Customer:</span>
-                <span className="font-extrabold text-slate-900">{receiptModal.booking.customerName} ({receiptModal.booking.whatsappNumber})</span>
+                <span className="text-[#64748B]">Customer:</span>
+                <span className="font-bold text-[#1E293B]">
+                  {receiptModal.booking.customerName} ({receiptModal.booking.whatsappNumber})
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Pet & Plot:</span>
-                <span className="font-extrabold text-slate-900">{receiptModal.booking.petName} ({receiptModal.booking.petType}) — Plot {receiptModal.booking.plotNumber}</span>
+                <span className="text-[#64748B]">Pet & Plot:</span>
+                <span className="font-bold text-[#1E293B]">
+                  {receiptModal.booking.petName} ({receiptModal.booking.petType}) • Plot{' '}
+                  <span className="font-mono">{receiptModal.booking.plotNumber}</span>
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Payment Method:</span>
-                <span className="font-mono font-bold text-emerald-700">{receiptModal.booking.paymentMethod}</span>
+                <span className="text-[#64748B]">Payment Method:</span>
+                <span className="font-mono font-bold text-[#2563EB]">
+                  {receiptModal.booking.paymentMethod}
+                </span>
               </div>
             </div>
 
             {/* QR Code section */}
             {receiptModal.subscription && receiptModal.qrDataUrl && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center space-x-4">
-                <img src={receiptModal.qrDataUrl} alt="QR Token" className="w-24 h-24 rounded-xl border border-emerald-300 bg-white p-1" />
+              <div className="bg-[#EFF6FF] border border-blue-200 rounded-2xl p-4 flex items-center space-x-4">
+                <img
+                  src={receiptModal.qrDataUrl}
+                  alt="Name Plate Serial Tag QR Code"
+                  className="w-24 h-24 rounded-xl border border-blue-200 bg-white p-1 shrink-0"
+                />
                 <div className="text-xs space-y-1">
-                  <span className="font-extrabold text-emerald-900 block flex items-center space-x-1">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Serial Tag #{receiptModal.subscription.tagSerial}</span>
+                  <span className="font-bold text-[#1E293B] flex items-center space-x-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
+                    <span className="font-mono">Tag #{receiptModal.subscription.tagSerial}</span>
                   </span>
-                  <p className="text-slate-600 text-[11px]">
-                    Tamper-evident serial sticker assigned for ground mounting. Valid for 1 year.
+                  <p className="text-[#475569] text-[11px] leading-relaxed">
+                    Tamper-evident QR serial tag assigned for ground mounting. Valid for 1 year.
                   </p>
                 </div>
               </div>
             )}
 
             {/* Actions */}
-            <div className="flex space-x-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <button
+                type="button"
                 onClick={() => window.print()}
-                className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition"
+                className="flex-1 min-h-[44px] py-3 bg-[#1E293B] hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Official Invoice</span>
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setReceiptModal(null);
                   setActiveTab('cinema-plots');
                 }}
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition"
+                className="flex-1 min-h-[44px] py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 View Cinema Plot Map
               </button>
