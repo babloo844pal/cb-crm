@@ -16,6 +16,7 @@ import {
   HeartHandshake,
   Lock,
 } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface SidebarProps {
   activeTab: string;
@@ -278,6 +279,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
           </div>
+
+          <ThemeToggle />
         </div>
       </aside>
     </>

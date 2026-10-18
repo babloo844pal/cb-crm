@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-primary: #2563EB;
   --color-on-primary: #FFFFFF;
@@ -16,6 +18,22 @@
   --color-ring: #2563EB;
 }
 
+.dark {
+  --color-primary: #3B82F6;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #60A5FA;
+  --color-accent: #EA580C;
+  --color-background: #0B1120;
+  --color-foreground: #F8FAFC;
+  --color-card: #1E293B;
+  --color-card-foreground: #F8FAFC;
+  --color-muted: #1E293B;
+  --color-muted-foreground: #94A3B8;
+  --color-border: #334155;
+  --color-destructive: #EF4444;
+  --color-ring: #3B82F6;
+}
+
 @theme inline {
   --color-background: var(--color-background);
   --color-foreground: var(--color-foreground);
@@ -28,6 +46,7 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
   line-height: 1.5;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Smooth focus rings for keyboard navigation */
@@ -47,6 +66,130 @@ textarea:focus-visible {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Comprehensive Dark Mode Theme Overrides */
+html.dark,
+html.dark body {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+}
+
+html.dark header,
+html.dark aside,
+html.dark footer,
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95 {
+  background-color: #131E32 !important;
+  color: #F8FAFC !important;
+}
+
+html.dark .bg-\[\#F8FAFC\],
+html.dark .bg-\[\#F8FAFC\]\/90 {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+}
+
+html.dark .bg-\[\#F1F5F9\] {
+  background-color: #1E293B !important;
+  color: #E2E8F0 !important;
+}
+
+html.dark .border-\[\#E2E8F0\] {
+  border-color: #24344D !important;
+}
+
+html.dark .border-\[\#CBD5E1\] {
+  border-color: #334155 !important;
+}
+
+html.dark .divide-\[\#E2E8F0\] > * {
+  border-color: #24344D !important;
+}
+
+html.dark .text-\[\#1E293B\] {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-\[\#475569\],
+html.dark .text-\[\#64748B\] {
+  color: #94A3B8 !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+html.dark .hover\:bg-\[\#F8FAFC\]:hover {
+  background-color: #1E293B !important;
+}
+
+html.dark .hover\:bg-\[\#F1F5F9\]:hover {
+  background-color: #1E293B !important;
+}
+
+html.dark .bg-\[\#EFF6FF\] {
+  background-color: rgba(37, 99, 235, 0.16) !important;
+  color: #93C5FD !important;
+}
+
+html.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+html.dark .bg-blue-50 {
+  background-color: rgba(37, 99, 235, 0.18) !important;
+  color: #93C5FD !important;
+}
+
+html.dark .hover\:bg-blue-100:hover {
+  background-color: rgba(37, 99, 235, 0.28) !important;
+}
+
+html.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.16) !important;
+}
+
+html.dark .border-emerald-200 {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+html.dark .text-emerald-700 {
+  color: #34D399 !important;
+}
+
+html.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.16) !important;
+}
+
+html.dark .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+html.dark .text-amber-800 {
+  color: #FBBF24 !important;
+}
+
+html.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.16) !important;
+}
+
+html.dark .border-rose-200 {
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+html.dark .text-rose-700 {
+  color: #FB7185 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

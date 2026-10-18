@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppUser, Location } from '../lib/types';
 import { AuthModal } from './AuthModal';
+import { ThemeToggle } from './ThemeToggle';
 import {
   Search,
   Calendar,
@@ -184,6 +185,8 @@ export const Header: React.FC<HeaderProps> = ({
             <Calendar className="w-3.5 h-3.5 text-[#2563EB]" />
             <span>{currentDateStr}</span>
           </div>
+
+          <ThemeToggle />
 
           <AuthModal
             currentUser={currentUser}
