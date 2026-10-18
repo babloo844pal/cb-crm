@@ -25,11 +25,14 @@ export type SubscriptionFilterPeriod =
   | 'TODAY_ALLOTTED'
   | 'TODAY_RENEWED';
 
+import { AppUser } from '../lib/types';
+
 interface DashboardProps {
   bookings: CustomerBooking[];
   subscriptions: NamePlateSubscription[];
   locations: Location[];
   stats: RevenueStats;
+  currentUser?: AppUser;
   setActiveTab: (tab: string) => void;
   onNavigateSubscriptions?: (filter: SubscriptionFilterPeriod) => void;
   onSelectLocationFromDashboard?: (locationId: string) => void;
@@ -40,6 +43,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   subscriptions,
   locations,
   stats,
+  currentUser,
   setActiveTab,
   onNavigateSubscriptions,
   onSelectLocationFromDashboard,
@@ -75,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             Welcome to Peaceful Paws CRM
           </h2>
           <p className="text-xs sm:text-sm text-[#475569] mt-1">
-            Real-time overview of customer bookings, financial collections, Cinema Hall grave plot occupancy, and annual ₹5,000 name plate renewals.
+            Real-time overview of customer bookings, financial collections, grave plot occupancy, and annual ₹5,000 name plate renewals.
           </p>
         </div>
 
@@ -94,7 +98,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="min-h-[44px] px-4 py-2.5 bg-white hover:bg-[#F8FAFC] text-[#1E293B] border border-[#CBD5E1] rounded-xl font-bold text-xs transition-all duration-200 shadow-2xs flex items-center space-x-2 cursor-pointer"
           >
             <Tv className="w-4 h-4 text-[#2563EB]" />
-            <span>Cinema Plot Map</span>
+            <span>Plot Map</span>
           </button>
         </div>
       </div>
@@ -309,19 +313,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
             <h3 className="font-bold text-[#1E293B] text-sm flex items-center space-x-2">
               <Building2 className="w-4 h-4 text-[#2563EB]" />
-              <span>Branch Office Plot Occupancy (Click branch to open Plot Map)</span>
+              <span>
+                {currentUser?.role === 'MANAGER'
+                  ? 'Assigned Branch Plot Occupancy'
+                  : 'Branch Office Plot Occupancy (Click branch to open Plot Map)'}
+              </span>
             </h3>
             <button
               type="button"
               onClick={() => setActiveTab('cinema-plots')}
               className="text-xs font-bold text-[#2563EB] hover:underline cursor-pointer"
             >
-              Open Cinema Map
+              Open Plot Map
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {locations.map((loc) => {
+            {(currentUser?.role === 'MANAGER'
+              ? locations.filter((l) => l.id === currentUser.assignedLocationId)
+              : locations
+            ).map((loc) => {
               const locBookings = bookings.filter((b) => b.locationId === loc.id);
               const locRevenue = locBookings.reduce((sum, b) => sum + b.totalAmount, 0);
               const occPercent = Math.round((loc.occupiedPlots / loc.totalPlots) * 100);

@@ -1,5 +1,5 @@
 export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'EXPIRING_SOON' | 'ALLOTTED_TODAY' | 'RENEWED_TODAY' | 'UNAUTHORIZED' | 'PENDING_RENEWAL';
-export type UserRole = 'ADMIN' | 'STAFF';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'OPERATOR';
 
 export interface Location {
   id: string;

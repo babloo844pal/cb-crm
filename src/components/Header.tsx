@@ -49,6 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [currentDateStr, setCurrentDateStr] = useState('Today');
   const isAdmin = currentUser.role === 'ADMIN';
+  const isManager = currentUser.role === 'MANAGER';
+  const isOperator = currentUser.role === 'OPERATOR';
 
   useEffect(() => {
     setCurrentDateStr(
@@ -60,19 +62,35 @@ export const Header: React.FC<HeaderProps> = ({
     );
   }, []);
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'booking', label: 'New Booking', icon: UserPlus },
-    { id: 'cinema-plots', label: 'Cinema Map', icon: Tv },
-    { id: 'subscriptions', label: 'Subscriptions', icon: Tag, badge: expiringCount },
-    { id: 'audit', label: 'Field Audit', icon: ShieldCheck },
-  ];
+  // Role-based Nav Items
+  let navItems: {
+    id: string;
+    label: string;
+    icon: any;
+    badge?: number;
+  }[] = [];
 
-  if (isAdmin) {
-    navItems.push(
-      { id: 'packages', label: 'Packages', icon: Package },
-      { id: 'staff', label: 'Staff', icon: Users }
-    );
+  if (isOperator) {
+    // Operator can ONLY attend New Booking functionality
+    navItems = [
+      { id: 'booking', label: 'New Booking', icon: UserPlus },
+    ];
+  } else {
+    // Admin and Manager can access Dashboard, Booking, Plot Map, Subscriptions, Audit
+    navItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'booking', label: 'New Booking', icon: UserPlus },
+      { id: 'cinema-plots', label: 'Plot Map', icon: Tv },
+      { id: 'subscriptions', label: 'Subscriptions', icon: Tag, badge: expiringCount },
+      { id: 'audit', label: 'Field Audit', icon: ShieldCheck },
+    ];
+
+    if (isAdmin) {
+      navItems.push(
+        { id: 'packages', label: 'Packages', icon: Package },
+        { id: 'staff', label: 'Staff', icon: Users }
+      );
+    }
   }
 
   return (
@@ -91,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             type="button"
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => setActiveTab(isOperator ? 'booking' : 'dashboard')}
             className="flex items-center space-x-2 cursor-pointer lg:hidden text-left py-1"
           >
             <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center text-white shadow-xs shrink-0">

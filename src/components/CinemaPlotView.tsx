@@ -8,12 +8,14 @@ interface CinemaPlotViewProps {
   bookings: CustomerBooking[];
   subscriptions: NamePlateSubscription[];
   setActiveTab: (tab: string) => void;
+  locationName?: string;
 }
 
 export const CinemaPlotView: React.FC<CinemaPlotViewProps> = ({
   bookings,
   subscriptions,
   setActiveTab,
+  locationName,
 }) => {
   const [selectedSector, setSelectedSector] = useState('Sector A');
   const [seatFilter, setSeatFilter] = useState<'ALL' | 'FREE' | 'OCCUPIED' | 'EXPIRING'>('ALL');
@@ -41,11 +43,18 @@ export const CinemaPlotView: React.FC<CinemaPlotViewProps> = ({
             <Tv className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-[#1E293B]">
-              Cinema Hall Style Grave Plot Map
-            </h2>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg sm:text-xl font-bold text-[#1E293B]">
+                Interactive Grave Plot Map
+              </h2>
+              {locationName && (
+                <span className="text-[10px] font-mono font-bold bg-[#EFF6FF] text-[#2563EB] border border-blue-200 px-2 py-0.5 rounded-md">
+                  {locationName}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#475569] mt-0.5">
-              Interactive seat grid showing real-time plot occupancy, name plate allocations, and upcoming expirations.
+              Interactive grid view showing real-time plot occupancy, name plate allocations, and upcoming expirations.
             </p>
           </div>
         </div>

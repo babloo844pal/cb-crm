@@ -477,16 +477,16 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
             </div>
           )}
 
-          {/* SLIDE 2: Pet & Cinema Hall Plot Selection */}
+          {/* SLIDE 2: Pet & Grave Plot Selection */}
           {currentSlide === 2 && (
             <div className="space-y-5 animate-fade-in">
               <div className="border-b border-[#E2E8F0] pb-3">
                 <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-[#2563EB] uppercase tracking-wider">
                   <Tv className="w-4 h-4" />
-                  <span>Slide 2: Pet Profile & Cinema Plot Allotment</span>
+                  <span>Slide 2: Pet Profile & Grave Plot Allotment</span>
                 </div>
                 <h3 className="text-base font-bold text-[#1E293B] mt-0.5">
-                  Record pet details and allocate a Cinema Hall style plot seat
+                  Record pet details and allocate a designated grave plot seat
                 </h3>
               </div>
 
@@ -566,12 +566,12 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                 </div>
               </div>
 
-              {/* Cinema Plot Seat Selection Grid Inputs */}
+              {/* Plot Seat Selection Grid Inputs */}
               <div className="bg-[#EFF6FF]/60 border border-blue-200 p-4 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-[#1E293B]">
                   <span className="flex items-center space-x-1.5">
                     <Tv className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>Cinema Plot Seat Designation</span>
+                    <span>Grave Plot Seat Designation</span>
                   </span>
                   <span className="font-mono text-[#2563EB] bg-white border border-blue-200 px-2.5 py-0.5 rounded-md">
                     Allocated: {plotSector} • {plotRow.replace('Row ', '')}-{plotSeat}
@@ -603,7 +603,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                       htmlFor="slide-plot-row"
                       className="block text-[11px] font-bold text-[#475569] mb-1"
                     >
-                      Cinema Row
+                      Plot Row
                     </label>
                     <select
                       id="slide-plot-row"
@@ -1016,7 +1016,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                 }}
                 className="flex-1 min-h-[44px] py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
-                View Cinema Plot Map
+                View Plot Map
               </button>
             </div>
           </div>

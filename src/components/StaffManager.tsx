@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AppUser, Location } from '../lib/types';
+import { AppUser, Location, UserRole } from '../lib/types';
 import {
   UserCheck,
   UserPlus,
@@ -29,6 +29,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [role, setRole] = useState<'MANAGER' | 'OPERATOR'>('MANAGER');
   const [locationId, setLocationId] = useState(locations[0]?.id || 'LOC-1');
   const [inviteSent, setInviteSent] = useState(false);
 
@@ -37,10 +38,10 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
     if (!email) return;
 
     const newUser: AppUser = {
-      uid: `USR-STAFF-${Math.floor(100 + Math.random() * 900)}`,
+      uid: `USR-${role}-${Math.floor(100 + Math.random() * 900)}`,
       email,
       displayName: displayName || email.split('@')[0],
-      role: 'STAFF',
+      role,
       assignedLocationId: locationId,
       invitedBy: 'admin@cb-crm.com',
       status: 'INVITED',
@@ -53,6 +54,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
       setShowInviteModal(false);
       setEmail('');
       setDisplayName('');
+      setRole('MANAGER');
     }, 1800);
   };
 
@@ -66,10 +68,10 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-[#1E293B]">
-              Staff Operator & Branch Access Management
+              Staff & Branch Role Management
             </h2>
             <p className="text-xs text-[#475569] mt-0.5">
-              Invite staff operators via Google Workspace email and assign them to specific cemetery branches.
+              Assign roles (`ADMIN`, `MANAGER`, `OPERATOR`) and restrict staff access to specific cemetery branches.
             </p>
           </div>
         </div>
@@ -107,7 +109,8 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                 <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
                 <h4 className="font-bold text-sm">Invitation Dispatched!</h4>
                 <p className="text-xs text-emerald-800">
-                  Google Account <strong>{email}</strong> has been granted operator access to the selected branch.
+                  Google Account <strong>{email}</strong> has been invited as a{' '}
+                  <strong>{role === 'MANAGER' ? 'Branch Manager' : 'Front Desk Operator'}</strong>.
                 </p>
               </div>
             ) : (
@@ -127,7 +130,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="operator.name@gmail.com"
+                      placeholder="staff.name@gmail.com"
                       className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl pl-10 pr-3.5 py-2 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                     />
                   </div>
@@ -138,7 +141,7 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                     htmlFor="staff-name"
                     className="block text-[#1E293B] font-semibold mb-1.5"
                   >
-                    Full Operator Name
+                    Full Name
                   </label>
                   <input
                     id="staff-name"
@@ -148,6 +151,34 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                     placeholder="e.g. Suresh Kumar"
                     className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
                   />
+                </div>
+
+                {/* Role Permission Selector */}
+                <div>
+                  <label
+                    htmlFor="staff-role"
+                    className="block text-[#1E293B] font-semibold mb-1.5"
+                  >
+                    Role Permission Level *
+                  </label>
+                  <select
+                    id="staff-role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as 'MANAGER' | 'OPERATOR')}
+                    className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-[#1E293B] font-medium focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white cursor-pointer"
+                  >
+                    <option value="MANAGER">
+                      MANAGER (Branch Dashboard, Booking, Plot Map, Subscriptions, Field Audit)
+                    </option>
+                    <option value="OPERATOR">
+                      OPERATOR (New Customer Booking Functionality Only)
+                    </option>
+                  </select>
+                  <span className="text-[11px] text-[#64748B] mt-1.5 block">
+                    {role === 'MANAGER'
+                      ? 'Managers can monitor their branch dashboard, plot allocations, and audit subscriptions.'
+                      : 'Operators can only register new customer bookings and issue receipts for their assigned branch.'}
+                  </span>
                 </div>
 
                 <div>
@@ -169,16 +200,13 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                       </option>
                     ))}
                   </select>
-                  <span className="text-[11px] text-[#64748B] mt-1.5 block">
-                    Staff operator will only view and process bookings for this assigned branch.
-                  </span>
                 </div>
 
                 <button
                   type="submit"
                   className="w-full min-h-[44px] py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-bold text-xs transition-all duration-200 shadow-xs cursor-pointer"
                 >
-                  Send Invitation & Grant Branch Access
+                  Send Invitation & Grant Role
                 </button>
               </form>
             )}
@@ -220,12 +248,18 @@ export const StaffManager: React.FC<StaffManagerProps> = ({
                         className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full font-bold text-[11px] ${
                           user.role === 'ADMIN'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            : 'bg-[#EFF6FF] text-[#2563EB] border border-blue-200'
+                            : user.role === 'MANAGER'
+                            ? 'bg-[#EFF6FF] text-[#2563EB] border border-blue-200'
+                            : 'bg-amber-50 text-amber-800 border border-amber-200'
                         }`}
                       >
                         <Shield className="w-3.5 h-3.5" />
                         <span>
-                          {user.role === 'ADMIN' ? 'System Administrator' : 'Branch Operator'}
+                          {user.role === 'ADMIN'
+                            ? 'System Administrator'
+                            : user.role === 'MANAGER'
+                            ? 'Branch Manager'
+                            : 'Front Desk Operator'}
                         </span>
                       </span>
                     </td>

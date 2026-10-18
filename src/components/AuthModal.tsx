@@ -3,7 +3,7 @@
 import React from 'react';
 import { AppUser, Location } from '../lib/types';
 import { loginWithGoogle } from '../lib/firebase';
-import { ShieldCheck, MapPin, CheckCircle2, X, ChevronDown, Zap } from 'lucide-react';
+import { ShieldCheck, MapPin, CheckCircle2, X, ChevronDown, Zap, UserCheck, UserPlus } from 'lucide-react';
 
 interface AuthModalProps {
   currentUser: AppUser;
@@ -34,7 +34,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           email: firebaseUser.email,
           displayName: firebaseUser.displayName || firebaseUser.email,
           photoURL: firebaseUser.photoURL || undefined,
-          role: 'STAFF',
+          role: 'OPERATOR',
           assignedLocationId: locations[0]?.id,
           status: 'ACTIVE',
         };
@@ -66,12 +66,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
         <div className="text-left hidden sm:block">
           <div className="font-bold text-[#1E293B] leading-tight flex items-center space-x-1.5">
-            <span className="truncate max-w-[110px]">{currentUser.displayName}</span>
+            <span className="truncate max-w-[110px]">{currentUser.displayName.split(' ')[0]}</span>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
                 currentUser.role === 'ADMIN'
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-[#EFF6FF] text-[#2563EB] border border-blue-200'
+                  : currentUser.role === 'MANAGER'
+                  ? 'bg-[#EFF6FF] text-[#2563EB] border border-blue-200'
+                  : 'bg-amber-50 text-amber-800 border border-amber-200'
               }`}
             >
               {currentUser.role}
@@ -79,10 +81,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
           <span className="text-[11px] text-[#64748B] block leading-tight">
             {currentUser.role === 'ADMIN'
-              ? 'Global Administrator'
-              : userLocation
-              ? userLocation.name
-              : 'Branch Operator'}
+              ? 'Global Admin'
+              : currentUser.role === 'MANAGER'
+              ? `${userLocation?.name?.split(' ')[0] || 'Branch'} Manager`
+              : `${userLocation?.name?.split(' ')[0] || 'Branch'} Operator`}
           </span>
         </div>
         <ChevronDown className="w-3.5 h-3.5 text-[#64748B]" />
@@ -96,9 +98,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-4 shadow-xl z-50 text-xs space-y-4">
+          <div className="absolute right-0 mt-2 w-84 bg-white/95 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-4 shadow-xl z-50 text-xs space-y-4">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2.5">
-              <span className="font-bold text-[#1E293B] text-sm">Account & Role Switcher</span>
+              <div>
+                <span className="font-bold text-[#1E293B] text-sm block">Account & Role Switcher</span>
+                <span className="text-[10px] text-[#64748B]">Admin • Manager • Operator</span>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -116,10 +121,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <div className="font-bold text-[#1E293B] text-sm">{currentUser.displayName}</div>
               <div className="text-[#475569] text-xs font-mono">{currentUser.email}</div>
-              <div className="text-[#2563EB] font-semibold pt-1 flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {currentUser.role} • {currentUser.role === 'ADMIN' ? 'All Branches' : userLocation?.name}
+              <div className="pt-1 flex items-center space-x-1.5 text-xs font-semibold">
+                <span
+                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                    currentUser.role === 'ADMIN'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : currentUser.role === 'MANAGER'
+                      ? 'bg-[#EFF6FF] text-[#2563EB] border border-blue-200'
+                      : 'bg-amber-50 text-amber-800 border border-amber-200'
+                  }`}
+                >
+                  {currentUser.role}
+                </span>
+                <span className="text-[#475569]">
+                  {currentUser.role === 'ADMIN'
+                    ? 'All Locations Access'
+                    : currentUser.role === 'MANAGER'
+                    ? `${userLocation?.name} (Branch Operations)`
+                    : `${userLocation?.name} (New Booking Only)`}
                 </span>
               </div>
             </div>
@@ -135,17 +154,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 className="w-4 h-4"
                 alt="Google"
               />
-              <span>Sign In with Google Workspace</span>
+              <span>Sign In with Google Account</span>
             </button>
 
             {/* Quick Demo Switcher */}
             <div className="space-y-2 border-t border-[#E2E8F0] pt-3">
               <span className="text-[10px] text-[#64748B] uppercase font-bold tracking-wider flex items-center space-x-1">
                 <Zap className="w-3 h-3 text-[#EA580C]" />
-                <span>Quick Role Switcher (Demo):</span>
+                <span>Test Role Switcher (Admin / Manager / Operator):</span>
               </span>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                 {availableUsers.map((u) => {
                   const isSelected = u.uid === currentUser.uid;
                   const loc = locations.find((l) => l.id === u.assignedLocationId);
@@ -162,17 +181,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       }`}
                     >
                       <div className="min-w-0 pr-2">
-                        <div className="font-bold text-xs text-[#1E293B] truncate">{u.displayName}</div>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-bold text-xs text-[#1E293B] truncate">{u.displayName}</span>
+                          <span
+                            className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold shrink-0 ${
+                              u.role === 'ADMIN'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : u.role === 'MANAGER'
+                                ? 'bg-[#EFF6FF] text-[#2563EB] border border-blue-200'
+                                : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            }`}
+                          >
+                            {u.role}
+                          </span>
+                        </div>
                         <div className="text-[11px] text-[#64748B] flex items-center space-x-1 mt-0.5">
                           {u.role === 'ADMIN' ? (
                             <>
                               <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                              <span>Global Admin (All Branches)</span>
+                              <span>Global Access (All Locations)</span>
+                            </>
+                          ) : u.role === 'MANAGER' ? (
+                            <>
+                              <UserCheck className="w-3 h-3 text-[#2563EB] shrink-0" />
+                              <span className="truncate">{loc?.name}: Full Branch Manager</span>
                             </>
                           ) : (
                             <>
-                              <MapPin className="w-3 h-3 text-[#2563EB] shrink-0" />
-                              <span className="truncate">{loc?.name || 'Staff Operator'}</span>
+                              <UserPlus className="w-3 h-3 text-[#EA580C] shrink-0" />
+                              <span className="truncate">{loc?.name}: Booking Only</span>
                             </>
                           )}
                         </div>
