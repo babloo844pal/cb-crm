@@ -14,6 +14,7 @@ import {
   HeartHandshake,
   TrendingUp,
   Clock,
+  Flame,
 } from 'lucide-react';
 
 export type SubscriptionFilterPeriod =
@@ -335,7 +336,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             ).map((loc) => {
               const locBookings = bookings.filter((b) => b.locationId === loc.id);
               const locRevenue = locBookings.reduce((sum, b) => sum + b.totalAmount, 0);
-              const occPercent = Math.round((loc.occupiedPlots / loc.totalPlots) * 100);
+              const occPercent =
+                loc.totalPlots > 0 ? Math.round((loc.occupiedPlots / loc.totalPlots) * 100) : 0;
+              const hasBurial = loc.supportedServices?.includes('BURIAL') ?? true;
 
               return (
                 <button
@@ -353,6 +356,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div>
                       <h4 className="font-bold text-[#1E293B] text-xs">{loc.name}</h4>
                       <p className="text-[11px] text-[#64748B]">{loc.address}</p>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {loc.supportedServices?.includes('BURIAL') && (
+                          <span className="text-[9px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded">
+                            🪦 Burial
+                          </span>
+                        )}
+                        {loc.supportedServices?.includes('CREMATION') && (
+                          <span className="text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded inline-flex items-center space-x-0.5">
+                            <Flame className="w-2.5 h-2.5 text-amber-600" />
+                            <span>Cremation</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <span className="text-[10px] font-mono font-bold bg-white text-[#2563EB] border border-[#CBD5E1] px-2 py-0.5 rounded-md shrink-0">
                       {loc.code}
@@ -360,18 +376,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="font-medium text-[#475569]">Grave Plot Occupancy</span>
-                      <span className="font-bold text-[#1E293B] font-mono">
-                        {loc.occupiedPlots} / {loc.totalPlots} ({occPercent}%)
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#2563EB] rounded-full transition-all duration-300"
-                        style={{ width: `${occPercent}%` }}
-                      />
-                    </div>
+                    {hasBurial ? (
+                      <>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="font-medium text-[#475569]">Grave Plot Occupancy</span>
+                          <span className="font-bold text-[#1E293B] font-mono">
+                            {loc.occupiedPlots} / {loc.totalPlots} ({occPercent}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#2563EB] rounded-full transition-all duration-300"
+                            style={{ width: `${occPercent}%` }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-2 text-[11px] text-amber-900 flex items-center justify-between">
+                        <span className="font-semibold flex items-center space-x-1">
+                          <Flame className="w-3 h-3 text-amber-600" />
+                          <span>Dedicated Crematorium</span>
+                        </span>
+                        <span className="text-[10px] text-amber-700 font-mono">No Ground Plots</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-[#E2E8F0] flex items-center justify-between text-xs">

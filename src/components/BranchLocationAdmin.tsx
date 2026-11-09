@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Location } from '../lib/types';
+import { Location, ServiceType } from '../lib/types';
 import {
   Building2,
   Plus,
@@ -12,6 +12,7 @@ import {
   X,
   CheckCircle2,
   TrendingUp,
+  Flame,
 } from 'lucide-react';
 
 interface BranchLocationAdminProps {
@@ -34,6 +35,7 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [totalPlots, setTotalPlots] = useState<number>(50);
+  const [supportedServices, setSupportedServices] = useState<ServiceType[]>(['BURIAL', 'CREMATION']);
 
   // Form states for Edit Location
   const [editName, setEditName] = useState('');
@@ -42,6 +44,7 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
   const [editPhone, setEditPhone] = useState('');
   const [editTotalPlots, setEditTotalPlots] = useState<number>(50);
   const [editOccupiedPlots, setEditOccupiedPlots] = useState<number>(0);
+  const [editSupportedServices, setEditSupportedServices] = useState<ServiceType[]>(['BURIAL', 'CREMATION']);
 
   const handleOpenAdd = () => {
     setName('');
@@ -49,21 +52,25 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
     setAddress('');
     setPhone('+91 ');
     setTotalPlots(50);
+    setSupportedServices(['BURIAL', 'CREMATION']);
     setShowAddModal(true);
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newId = `LOC-${Date.now().toString().slice(-4)}`;
+    const hasBurial = supportedServices.includes('BURIAL');
+    const finalPlots = hasBurial ? (Number(totalPlots) || 50) : 0;
     const newLocation: Location = {
       id: newId,
       name,
       code: code.toUpperCase(),
       address,
       phone,
-      totalPlots: Number(totalPlots) || 50,
+      totalPlots: finalPlots,
       occupiedPlots: 0,
-      availablePlots: Number(totalPlots) || 50,
+      availablePlots: finalPlots,
+      supportedServices: supportedServices.length > 0 ? supportedServices : ['BURIAL'],
     };
     onAddLocation(newLocation);
     setShowAddModal(false);
@@ -77,13 +84,15 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
     setEditPhone(loc.phone);
     setEditTotalPlots(loc.totalPlots);
     setEditOccupiedPlots(loc.occupiedPlots);
+    setEditSupportedServices(loc.supportedServices || ['BURIAL']);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLoc) return;
-    const tot = Number(editTotalPlots) || 0;
-    const occ = Number(editOccupiedPlots) || 0;
+    const hasBurial = editSupportedServices.includes('BURIAL');
+    const tot = hasBurial ? (Number(editTotalPlots) || 0) : 0;
+    const occ = hasBurial ? (Number(editOccupiedPlots) || 0) : 0;
     const updated: Location = {
       ...editingLoc,
       name: editName,
@@ -93,6 +102,7 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
       totalPlots: tot,
       occupiedPlots: occ,
       availablePlots: Math.max(0, tot - occ),
+      supportedServices: editSupportedServices.length > 0 ? editSupportedServices : ['BURIAL'],
     };
     onUpdateLocation(updated);
     setEditingLoc(null);
@@ -219,6 +229,21 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
                     {loc.name}
                   </h4>
 
+                  {/* Services Offered Badges */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {loc.supportedServices?.includes('BURIAL') && (
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                        <span>🪦 Burial Ground</span>
+                      </span>
+                    )}
+                    {loc.supportedServices?.includes('CREMATION') && (
+                      <span className="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                        <Flame className="w-3 h-3 text-amber-600" />
+                        <span>Crematorium</span>
+                      </span>
+                    )}
+                  </div>
+
                   <div className="mt-3 space-y-1.5 text-xs text-[#475569]">
                     <div className="flex items-start space-x-2">
                       <MapPin className="w-3.5 h-3.5 text-[#64748B] shrink-0 mt-0.5" />
@@ -233,38 +258,57 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
 
                 {/* Plot Metrics */}
                 <div className="pt-3 border-t border-[#E2E8F0] space-y-2">
-                  <div className="flex items-center justify-between text-xs font-semibold text-[#1E293B]">
-                    <div className="flex items-center space-x-1.5">
-                      <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
-                      <span>Plot Capacity:</span>
+                  {loc.supportedServices?.includes('BURIAL') ? (
+                    <>
+                      <div className="flex items-center justify-between text-xs font-semibold text-[#1E293B]">
+                        <div className="flex items-center space-x-1.5">
+                          <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
+                          <span>Plot Capacity:</span>
+                        </div>
+                        <span className="font-mono">
+                          {loc.occupiedPlots} / {loc.totalPlots} ({occupancyRate}%)
+                        </span>
+                      </div>
+
+                      {/* Occupancy Progress Bar */}
+                      <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            occupancyRate > 80
+                              ? 'bg-rose-500'
+                              : occupancyRate > 50
+                              ? 'bg-amber-500'
+                              : 'bg-[#2563EB]'
+                          }`}
+                          style={{ width: `${Math.min(100, occupancyRate)}%` }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] pt-1">
+                        <span className="text-[#64748B]">
+                          Available: <strong className="text-emerald-700 font-mono">{loc.availablePlots}</strong>
+                        </span>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-bold">
+                          Active Facility
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-1.5 py-1">
+                      <div className="flex items-center justify-between text-xs font-semibold text-[#1E293B]">
+                        <div className="flex items-center space-x-1.5 text-amber-800">
+                          <Flame className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Dedicated Crematorium</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
+                          Furnace / Urn Niches
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#64748B]">
+                        Zero ground plots required. Specialized in private cremation & urn keepsakes.
+                      </p>
                     </div>
-                    <span className="font-mono">
-                      {loc.occupiedPlots} / {loc.totalPlots} ({occupancyRate}%)
-                    </span>
-                  </div>
-
-                  {/* Occupancy Progress Bar */}
-                  <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        occupancyRate > 80
-                          ? 'bg-rose-500'
-                          : occupancyRate > 50
-                          ? 'bg-amber-500'
-                          : 'bg-[#2563EB]'
-                      }`}
-                      style={{ width: `${Math.min(100, occupancyRate)}%` }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] pt-1">
-                    <span className="text-[#64748B]">
-                      Available: <strong className="text-emerald-700 font-mono">{loc.availablePlots}</strong>
-                    </span>
-                    <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-bold">
-                      Active Facility
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
             );
@@ -340,6 +384,68 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
               </div>
 
               <div>
+                <label className="block text-[#1E293B] font-semibold mb-1.5">
+                  Services Offered at this Branch *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label
+                    className={`flex items-start space-x-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      supportedServices.includes('BURIAL')
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold'
+                        : 'bg-[#F8FAFC] border-[#CBD5E1] text-[#64748B]'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={supportedServices.includes('BURIAL')}
+                      onChange={() => {
+                        if (supportedServices.includes('BURIAL') && supportedServices.length === 1) return;
+                        setSupportedServices((prev) =>
+                          prev.includes('BURIAL') ? prev.filter((s) => s !== 'BURIAL') : [...prev, 'BURIAL']
+                        );
+                      }}
+                      className="h-4 w-4 accent-emerald-600 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs">🪦 Burial Ground</div>
+                      <div className="text-[10px] font-normal text-[#64748B] mt-0.5">
+                        Grave plots & outdoor cemetery
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-start space-x-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      supportedServices.includes('CREMATION')
+                        ? 'bg-amber-50 border-amber-500 text-amber-900 font-bold'
+                        : 'bg-[#F8FAFC] border-[#CBD5E1] text-[#64748B]'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={supportedServices.includes('CREMATION')}
+                      onChange={() => {
+                        if (supportedServices.includes('CREMATION') && supportedServices.length === 1) return;
+                        setSupportedServices((prev) =>
+                          prev.includes('CREMATION') ? prev.filter((s) => s !== 'CREMATION') : [...prev, 'CREMATION']
+                        );
+                      }}
+                      className="h-4 w-4 accent-amber-600 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs flex items-center space-x-1">
+                        <Flame className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Crematorium</span>
+                      </div>
+                      <div className="text-[10px] font-normal text-[#64748B] mt-0.5">
+                        Furnace & urn memorial keepsakes
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
                 <label htmlFor="branch-address" className="block text-[#1E293B] font-semibold mb-1">
                   Full Physical Address *
                 </label>
@@ -354,24 +460,36 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
                 />
               </div>
 
-              <div>
-                <label htmlFor="branch-capacity" className="block text-[#1E293B] font-semibold mb-1">
-                  Total Grave Plot Capacity *
-                </label>
-                <input
-                  id="branch-capacity"
-                  type="number"
-                  min={1}
-                  required
-                  value={totalPlots}
-                  onChange={(e) => setTotalPlots(Number(e.target.value))}
-                  placeholder="50"
-                  className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 font-mono font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
-                />
-                <p className="text-[10px] text-[#64748B] mt-1">
-                  Initially all plots will be marked as available for booking.
-                </p>
-              </div>
+              {supportedServices.includes('BURIAL') ? (
+                <div>
+                  <label htmlFor="branch-capacity" className="block text-[#1E293B] font-semibold mb-1">
+                    Total Grave Plot Capacity *
+                  </label>
+                  <input
+                    id="branch-capacity"
+                    type="number"
+                    min={1}
+                    required
+                    value={totalPlots}
+                    onChange={(e) => setTotalPlots(Number(e.target.value))}
+                    placeholder="50"
+                    className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 font-mono font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
+                  />
+                  <p className="text-[10px] text-[#64748B] mt-1">
+                    Initially all plots will be marked as available for booking.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start space-x-2">
+                  <Flame className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Cremation-Only Branch:</span>
+                    <span className="block text-[11px] text-amber-800 mt-0.5">
+                      Ground burial plot capacity is not required for crematorium facilities.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2 flex items-center justify-end space-x-3">
                 <button
@@ -460,6 +578,68 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
               </div>
 
               <div>
+                <label className="block text-[#1E293B] font-semibold mb-1.5">
+                  Services Offered at this Branch *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label
+                    className={`flex items-start space-x-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      editSupportedServices.includes('BURIAL')
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold'
+                        : 'bg-[#F8FAFC] border-[#CBD5E1] text-[#64748B]'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editSupportedServices.includes('BURIAL')}
+                      onChange={() => {
+                        if (editSupportedServices.includes('BURIAL') && editSupportedServices.length === 1) return;
+                        setEditSupportedServices((prev) =>
+                          prev.includes('BURIAL') ? prev.filter((s) => s !== 'BURIAL') : [...prev, 'BURIAL']
+                        );
+                      }}
+                      className="h-4 w-4 accent-emerald-600 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs">🪦 Burial Ground</div>
+                      <div className="text-[10px] font-normal text-[#64748B] mt-0.5">
+                        Grave plots & outdoor cemetery
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    className={`flex items-start space-x-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                      editSupportedServices.includes('CREMATION')
+                        ? 'bg-amber-50 border-amber-500 text-amber-900 font-bold'
+                        : 'bg-[#F8FAFC] border-[#CBD5E1] text-[#64748B]'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editSupportedServices.includes('CREMATION')}
+                      onChange={() => {
+                        if (editSupportedServices.includes('CREMATION') && editSupportedServices.length === 1) return;
+                        setEditSupportedServices((prev) =>
+                          prev.includes('CREMATION') ? prev.filter((s) => s !== 'CREMATION') : [...prev, 'CREMATION']
+                        );
+                      }}
+                      className="h-4 w-4 accent-amber-600 rounded mt-0.5"
+                    />
+                    <div>
+                      <div className="text-xs flex items-center space-x-1">
+                        <Flame className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Crematorium</span>
+                      </div>
+                      <div className="text-[10px] font-normal text-[#64748B] mt-0.5">
+                        Furnace & urn memorial keepsakes
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div>
                 <label htmlFor="edit-branch-address" className="block text-[#1E293B] font-semibold mb-1">
                   Full Physical Address *
                 </label>
@@ -473,37 +653,49 @@ export const BranchLocationAdmin: React.FC<BranchLocationAdminProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="edit-total-plots" className="block text-[#1E293B] font-semibold mb-1">
-                    Total Plots Capacity *
-                  </label>
-                  <input
-                    id="edit-total-plots"
-                    type="number"
-                    min={1}
-                    required
-                    value={editTotalPlots}
-                    onChange={(e) => setEditTotalPlots(Number(e.target.value))}
-                    className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 font-mono font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
-                  />
-                </div>
+              {editSupportedServices.includes('BURIAL') ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="edit-total-plots" className="block text-[#1E293B] font-semibold mb-1">
+                      Total Plots Capacity *
+                    </label>
+                    <input
+                      id="edit-total-plots"
+                      type="number"
+                      min={1}
+                      required
+                      value={editTotalPlots}
+                      onChange={(e) => setEditTotalPlots(Number(e.target.value))}
+                      className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 font-mono font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="edit-occupied-plots" className="block text-[#1E293B] font-semibold mb-1">
-                    Occupied Plots
-                  </label>
-                  <input
-                    id="edit-occupied-plots"
-                    type="number"
-                    min={0}
-                    required
-                    value={editOccupiedPlots}
-                    onChange={(e) => setEditOccupiedPlots(Number(e.target.value))}
-                    className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 font-mono font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
-                  />
+                  <div>
+                    <label htmlFor="edit-occupied-plots" className="block text-[#1E293B] font-semibold mb-1">
+                      Occupied Plots
+                    </label>
+                    <input
+                      id="edit-occupied-plots"
+                      type="number"
+                      min={0}
+                      required
+                      value={editOccupiedPlots}
+                      onChange={(e) => setEditOccupiedPlots(Number(e.target.value))}
+                      className="w-full min-h-[44px] bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl px-3.5 py-2 font-mono font-bold text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white"
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start space-x-2">
+                  <Flame className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Cremation-Only Branch:</span>
+                    <span className="block text-[11px] text-amber-800 mt-0.5">
+                      Ground burial plot capacity is set to 0 as this facility only operates cremation furnaces.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2 flex items-center justify-end space-x-3">
                 <button

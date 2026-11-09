@@ -8,6 +8,7 @@ import {
   Location,
   AppUser,
   NamePlateSubscription,
+  ServiceType,
 } from '../lib/types';
 import {
   UserPlus,
@@ -42,6 +43,11 @@ interface CustomerBookingProps {
   currentUser: AppUser;
 }
 
+const generateBookingId = () => `BKG-${Math.floor(1000 + Math.random() * 9000)}`;
+const generateReceiptNo = () => `REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+const generateSubId = () => `SUB-${Math.floor(5000 + Math.random() * 4000)}`;
+const generateTagSerial = () => `NPT-${Math.floor(10000 + Math.random() * 89999)}`;
+
 export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
   onAddBooking,
   setActiveTab,
@@ -50,8 +56,26 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
   locations,
   currentUser,
 }) => {
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(
+    currentUser.assignedLocationId || locations[0]?.id || 'LOC-1'
+  );
   const userLocation =
-    locations.find((l) => l.id === currentUser.assignedLocationId) || locations[0];
+    locations.find((l) => l.id === selectedLocationId) || locations[0];
+
+  const supportedServices = userLocation?.supportedServices || ['BURIAL'];
+  const canDoBurial = supportedServices.includes('BURIAL');
+  const canDoCremation = supportedServices.includes('CREMATION');
+  const canDoBoth = canDoBurial && canDoCremation;
+
+  const [serviceType, setServiceType] = useState<ServiceType>(
+    canDoBurial ? 'BURIAL' : 'CREMATION'
+  );
+
+  // Cremation-specific Preferences
+  const [cremationDisposition, setCremationDisposition] = useState<string>(
+    'Ceramic Keepsake Urn (Handover to Family)'
+  );
+  const [cremationWitness, setCremationWitness] = useState<boolean>(true);
 
   // Slide Wizard Step State: 1 | 2 | 3 | 4
   const [currentSlide, setCurrentSlide] = useState<number>(1);
@@ -69,15 +93,57 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
   const [petBreed, setPetBreed] = useState('');
   const [petAge, setPetAge] = useState('');
 
-  // Plot Details State (Slide 2)
+  // Plot Details State (Slide 2 - for Burial only)
   const [plotSector, setPlotSector] = useState('Sector A');
   const [plotRow, setPlotRow] = useState('A1');
   const [plotSeat, setPlotSeat] = useState('05');
 
+  // Filter Combos & Standalone Services by selected serviceType
+  const availableCombos = combos.filter((c) => {
+    if (serviceType === 'BURIAL') return c.category !== 'CREMATION';
+    if (serviceType === 'CREMATION') return c.category !== 'BURIAL';
+    return true;
+  });
+
+  const availableServices = services.filter((s) => {
+    if (serviceType === 'BURIAL') return s.category !== 'CREMATION';
+    if (serviceType === 'CREMATION') return s.category !== 'BURIAL' && s.category !== 'MAINTENANCE';
+    return true;
+  });
+
   // Package Selection State (Slide 3)
   const [selectionType, setSelectionType] = useState<'COMBO' | 'STANDALONE'>('COMBO');
-  const [selectedComboId, setSelectedComboId] = useState(combos[0]?.id || '');
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(['SRV-101', 'SRV-102']);
+  const [selectedComboId, setSelectedComboId] = useState(availableCombos[0]?.id || combos[0]?.id || '');
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(
+    serviceType === 'BURIAL' ? ['SRV-101', 'SRV-102'] : ['SRV-103', 'SRV-102']
+  );
+
+  const handleLocationChange = (newLocId: string) => {
+    setSelectedLocationId(newLocId);
+    const loc = locations.find((l) => l.id === newLocId) || locations[0];
+    const locServices = loc?.supportedServices || ['BURIAL'];
+    if (!locServices.includes(serviceType)) {
+      const fallbackType = locServices[0] || 'BURIAL';
+      handleServiceTypeChange(fallbackType);
+    }
+  };
+
+  const handleServiceTypeChange = (newType: ServiceType) => {
+    setServiceType(newType);
+    const validCombos = combos.filter((c) => {
+      if (newType === 'BURIAL') return c.category !== 'CREMATION';
+      if (newType === 'CREMATION') return c.category !== 'BURIAL';
+      return true;
+    });
+    if (validCombos.length > 0) {
+      setSelectedComboId(validCombos[0].id);
+    }
+    if (newType === 'BURIAL') {
+      setSelectedServiceIds(['SRV-101', 'SRV-102']);
+    } else {
+      setSelectedServiceIds(['SRV-103', 'SRV-102']);
+    }
+  };
 
   // Payment Options State (Slide 4)
   const [paymentMethod, setPaymentMethod] = useState<
@@ -91,7 +157,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
     qrDataUrl?: string;
   } | null>(null);
 
-  const selectedCombo = combos.find((c) => c.id === selectedComboId) || combos[0];
+  const selectedCombo = availableCombos.find((c) => c.id === selectedComboId) || availableCombos[0];
 
   let totalAmount = 0;
   let hasNamePlate = false;
@@ -101,7 +167,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
     hasNamePlate = selectedCombo.includesNamePlate;
   } else {
     totalAmount = selectedServiceIds.reduce((sum, sId) => {
-      const s = services.find((srv) => srv.id === sId);
+      const s = availableServices.find((srv) => srv.id === sId) || services.find((srv) => srv.id === sId);
       return sum + (s ? s.price : 0);
     }, 0);
     hasNamePlate = selectedServiceIds.includes('SRV-102');
@@ -139,7 +205,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         setValidationError('Please enter pet name.');
         return;
       }
-      if (!plotSeat.trim()) {
+      if (serviceType === 'BURIAL' && !plotSeat.trim()) {
         setValidationError('Please enter plot seat number.');
         return;
       }
@@ -182,23 +248,25 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
       setValidationError('Customer information is incomplete.');
       return;
     }
-    if (!petName.trim() || !plotSeat.trim()) {
+    if (!petName.trim() || (serviceType === 'BURIAL' && !plotSeat.trim())) {
       setCurrentSlide(2);
-      setValidationError('Pet & plot details are incomplete.');
+      setValidationError('Pet & registration details are incomplete.');
       return;
     }
 
-    const bookingId = `BKG-${Math.floor(1000 + Math.random() * 9000)}`;
-    const receiptNo = `REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const bookingId = generateBookingId();
+    const receiptNo = generateReceiptNo();
     const todayStr = new Date().toISOString().split('T')[0];
     const cleanRow = plotRow.replace('Row ', '');
-    const fullPlotNum = `${cleanRow}-${plotSeat}`;
+    const fullPlotNum = serviceType === 'BURIAL' ? `${cleanRow}-${plotSeat}` : 'CREMATION-URN';
+    const finalSector = serviceType === 'BURIAL' ? plotSector : 'Crematorium Facility';
 
     const newBooking: CustomerBooking = {
       id: bookingId,
       receiptNo,
       locationId: userLocation.id,
       locationName: userLocation.name,
+      serviceType,
       customerName,
       customerPhone,
       whatsappNumber: whatsappNumber || customerPhone,
@@ -207,26 +275,30 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
       petType,
       petBreed,
       petAge,
-      plotSector,
-      plotRow: `Row ${cleanRow}`,
+      plotSector: finalSector,
+      plotRow: serviceType === 'BURIAL' ? `Row ${cleanRow}` : undefined,
       plotNumber: fullPlotNum,
       selectedServiceIds:
-        selectionType === 'STANDALONE' ? selectedServiceIds : selectedCombo.bundledServiceIds,
-      selectedComboPackageId: selectionType === 'COMBO' ? selectedComboId : undefined,
+        selectionType === 'STANDALONE' ? selectedServiceIds : (selectedCombo?.bundledServiceIds || []),
+      selectedComboPackageId: selectionType === 'COMBO' ? selectedCombo?.id : undefined,
       totalAmount,
       paymentMethod,
       paymentStatus: 'PAID',
       bookingDate: todayStr,
       hasNamePlate,
       createdByStaff: currentUser.displayName,
+      notes:
+        serviceType === 'CREMATION'
+          ? `Cremation Ceremony • ${cremationDisposition} • ${cremationWitness ? 'Family Attending Viewing Room' : 'Direct Incineration'}`
+          : undefined,
     };
 
     let newSub: NamePlateSubscription | undefined = undefined;
     let qrDataUrl = '';
 
     if (hasNamePlate) {
-      const subId = `SUB-${Math.floor(5000 + Math.random() * 4000)}`;
-      const tagSerial = `NPT-${Math.floor(10000 + Math.random() * 89999)}`;
+      const subId = generateSubId();
+      const tagSerial = generateTagSerial();
       const nextYear = new Date();
       nextYear.setFullYear(nextYear.getFullYear() + 1);
       const expiryStr = nextYear.toISOString().split('T')[0];
@@ -235,7 +307,8 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         tagSerial,
         petName,
         customerName,
-        plot: fullPlotNum,
+        serviceType,
+        plot: serviceType === 'BURIAL' ? fullPlotNum : `Memorial Plaque (${userLocation.name})`,
         expiryDate: expiryStr,
         status: 'ACTIVE',
         location: userLocation.name,
@@ -257,7 +330,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         customerName,
         customerPhone,
         whatsappNumber: whatsappNumber || customerPhone,
-        plotSector,
+        plotSector: finalSector,
         plotNumber: fullPlotNum,
         amountPaid: 5000,
         allotmentDate: todayStr,
@@ -265,6 +338,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         daysUntilExpiry: 365,
         status: 'ALLOTTED_TODAY',
         isAllottedToday: true,
+        qrCodeUrl: qrDataUrl,
       };
     }
 
@@ -279,7 +353,12 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
 
   const slides = [
     { number: 1, title: 'Customer Details', short: 'Customer', icon: User },
-    { number: 2, title: 'Pet & Plot Map', short: 'Pet & Plot', icon: Tv },
+    {
+      number: 2,
+      title: serviceType === 'BURIAL' ? 'Pet & Plot Map' : 'Pet & Cremation',
+      short: serviceType === 'BURIAL' ? 'Pet & Plot' : 'Pet & Memorial',
+      icon: serviceType === 'BURIAL' ? Tv : Flame,
+    },
     { number: 3, title: 'Package Selection', short: 'Packages', icon: Package },
     { number: 4, title: 'Payment & Review', short: 'Review & Pay', icon: Receipt },
   ];
@@ -306,9 +385,24 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
           <Building2 className="w-4 h-4 text-[#2563EB] shrink-0" />
           <div>
             <span className="text-[10px] text-[#64748B] block uppercase font-bold tracking-wider">
-              Branch Office
+              Branch Facility
             </span>
-            <span className="font-bold text-[#1E293B]">{userLocation.name}</span>
+            {currentUser.role === 'ADMIN' ? (
+              <select
+                aria-label="Select Branch Facility"
+                value={selectedLocationId}
+                onChange={(e) => handleLocationChange(e.target.value)}
+                className="font-bold text-[#1E293B] bg-transparent border-0 p-0 pr-2 focus:ring-0 cursor-pointer text-xs"
+              >
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="font-bold text-[#1E293B]">{userLocation.name}</span>
+            )}
           </div>
         </div>
       </div>
@@ -340,7 +434,6 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
         {/* Slide Step Tabs */}
         <div className="grid grid-cols-4 gap-2">
           {slides.map((s) => {
-            const Icon = s.icon;
             const isActive = currentSlide === s.number;
             const isCompleted = currentSlide > s.number;
 
@@ -389,18 +482,139 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
       {/* Interactive Form Slides Container */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 shadow-xs min-h-[380px] flex flex-col justify-between">
-          {/* SLIDE 1: Customer Personal Information */}
+          {/* SLIDE 1: Customer Personal Information & Service Type Selection */}
           {currentSlide === 1 && (
             <div className="space-y-5 animate-fade-in">
               <div className="border-b border-[#E2E8F0] pb-3">
                 <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-[#2563EB] uppercase tracking-wider">
                   <User className="w-4 h-4" />
-                  <span>Slide 1: Customer Personal Information</span>
+                  <span>Slide 1: Customer Details & Service Type</span>
                 </div>
                 <h3 className="text-base font-bold text-[#1E293B] mt-0.5">
-                  Enter customer contact details for billing & WhatsApp receipts
+                  Select service category and enter customer contact information
                 </h3>
               </div>
+
+              {/* Service Type Selection Section */}
+              {canDoBoth ? (
+                <div className="space-y-2 bg-[#F8FAFC] border border-[#CBD5E1] p-4 rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-[#1E293B] uppercase tracking-wider">
+                      Select Memorial Service Type *
+                    </label>
+                    <span className="text-[10px] font-mono font-bold text-[#2563EB] bg-[#EFF6FF] border border-blue-200 px-2 py-0.5 rounded-md">
+                      Dual-Facility Branch
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleServiceTypeChange('BURIAL')}
+                      className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex items-start space-x-3 ${
+                        serviceType === 'BURIAL'
+                          ? 'bg-emerald-50/90 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                          : 'bg-white border-[#CBD5E1] hover:bg-[#F1F5F9]'
+                      }`}
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${
+                          serviceType === 'BURIAL'
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-[#E2E8F0] text-[#64748B]'
+                        }`}
+                      >
+                        🪦
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-xs text-[#1E293B]">
+                            Ground Burial Service
+                          </span>
+                          {serviceType === 'BURIAL' && (
+                            <span className="text-[10px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#64748B] mt-0.5 leading-relaxed">
+                          Grave plot preparation, casket burial, outdoor ceremony, and ground mounting nameplate.
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleServiceTypeChange('CREMATION')}
+                      className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex items-start space-x-3 ${
+                        serviceType === 'CREMATION'
+                          ? 'bg-amber-50/90 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+                          : 'bg-white border-[#CBD5E1] hover:bg-[#F1F5F9]'
+                      }`}
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          serviceType === 'CREMATION'
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-[#E2E8F0] text-[#64748B]'
+                        }`}
+                      >
+                        <Flame className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-xs text-[#1E293B]">
+                            Dignified Cremation Service
+                          </span>
+                          {serviceType === 'CREMATION' && (
+                            <span className="text-[10px] font-bold bg-amber-600 text-white px-1.5 py-0.5 rounded">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#64748B] mt-0.5 leading-relaxed">
+                          Private furnace incineration, family viewing room ceremony, and keepsake ash urn.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-2xl flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2.5">
+                    {canDoBurial ? (
+                      <>
+                        <span className="text-xl">🪦</span>
+                        <div>
+                          <span className="font-bold text-[#1E293B] block">
+                            Facility Type: Ground Burial Only
+                          </span>
+                          <span className="text-[11px] text-[#64748B]">
+                            This location exclusively provides ground casket burials & plots.
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0">
+                          <Flame className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-[#1E293B] block">
+                            Facility Type: Dedicated Crematorium Only
+                          </span>
+                          <span className="text-[11px] text-[#64748B]">
+                            This location exclusively provides private cremation & urn services.
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold text-[#2563EB] bg-[#EFF6FF] border border-blue-200 px-2 py-0.5 rounded-md shrink-0">
+                    Location Bound
+                  </span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -477,16 +691,30 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
             </div>
           )}
 
-          {/* SLIDE 2: Pet & Grave Plot Selection */}
+          {/* SLIDE 2: Pet Profile & Grave Plot / Cremation Selection */}
           {currentSlide === 2 && (
             <div className="space-y-5 animate-fade-in">
               <div className="border-b border-[#E2E8F0] pb-3">
-                <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-[#2563EB] uppercase tracking-wider">
-                  <Tv className="w-4 h-4" />
-                  <span>Slide 2: Pet Profile & Grave Plot Allotment</span>
+                <div
+                  className={`inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider ${
+                    serviceType === 'CREMATION' ? 'text-amber-600' : 'text-[#2563EB]'
+                  }`}
+                >
+                  {serviceType === 'CREMATION' ? (
+                    <Flame className="w-4 h-4" />
+                  ) : (
+                    <Tv className="w-4 h-4" />
+                  )}
+                  <span>
+                    {serviceType === 'CREMATION'
+                      ? 'Slide 2: Pet Profile & Cremation Arrangements'
+                      : 'Slide 2: Pet Profile & Grave Plot Allotment'}
+                  </span>
                 </div>
                 <h3 className="text-base font-bold text-[#1E293B] mt-0.5">
-                  Record pet details and allocate a designated grave plot seat
+                  {serviceType === 'CREMATION'
+                    ? 'Record pet details, select memorial keepsake urn, and family attendance preferences'
+                    : 'Record pet details and allocate a designated grave plot seat'}
                 </h3>
               </div>
 
@@ -566,78 +794,159 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                 </div>
               </div>
 
-              {/* Plot Seat Selection Grid Inputs */}
-              <div className="bg-[#EFF6FF]/60 border border-blue-200 p-4 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-[#1E293B]">
-                  <span className="flex items-center space-x-1.5">
-                    <Tv className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>Grave Plot Seat Designation</span>
-                  </span>
-                  <span className="font-mono text-[#2563EB] bg-white border border-blue-200 px-2.5 py-0.5 rounded-md">
-                    Allocated: {plotSector} • {plotRow.replace('Row ', '')}-{plotSeat}
-                  </span>
+              {/* Conditional: Burial Grave Plot Allotment VS Cremation Memorial Preferences */}
+              {serviceType === 'BURIAL' ? (
+                <div className="bg-[#EFF6FF]/60 border border-blue-200 p-4 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#1E293B]">
+                    <span className="flex items-center space-x-1.5">
+                      <Tv className="w-3.5 h-3.5 text-[#2563EB]" />
+                      <span>Grave Plot Seat Designation</span>
+                    </span>
+                    <span className="font-mono text-[#2563EB] bg-white border border-blue-200 px-2.5 py-0.5 rounded-md">
+                      Allocated: {plotSector} • {plotRow.replace('Row ', '')}-{plotSeat}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label
+                        htmlFor="slide-plot-sector"
+                        className="block text-[11px] font-bold text-[#475569] mb-1"
+                      >
+                        Sector
+                      </label>
+                      <select
+                        id="slide-plot-sector"
+                        value={plotSector}
+                        onChange={(e) => setPlotSector(e.target.value)}
+                        className="w-full min-h-[40px] bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs font-bold text-[#1E293B] cursor-pointer"
+                      >
+                        <option value="Sector A">Sector A</option>
+                        <option value="Sector B">Sector B</option>
+                        <option value="Sector C">Sector C</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="slide-plot-row"
+                        className="block text-[11px] font-bold text-[#475569] mb-1"
+                      >
+                        Plot Row
+                      </label>
+                      <select
+                        id="slide-plot-row"
+                        value={plotRow}
+                        onChange={(e) => setPlotRow(e.target.value)}
+                        className="w-full min-h-[40px] bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs font-bold text-[#1E293B] cursor-pointer"
+                      >
+                        <option value="A1">Row A1</option>
+                        <option value="A2">Row A2</option>
+                        <option value="A3">Row A3</option>
+                        <option value="B1">Row B1</option>
+                        <option value="B2">Row B2</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="slide-plot-seat"
+                        className="block text-[11px] font-bold text-[#475569] mb-1"
+                      >
+                        Seat # *
+                      </label>
+                      <input
+                        id="slide-plot-seat"
+                        type="text"
+                        required
+                        value={plotSeat}
+                        onChange={(e) => setPlotSeat(e.target.value)}
+                        placeholder="05"
+                        className="w-full min-h-[40px] bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-[#1E293B]"
+                      />
+                    </div>
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label
-                      htmlFor="slide-plot-sector"
-                      className="block text-[11px] font-bold text-[#475569] mb-1"
-                    >
-                      Sector
-                    </label>
-                    <select
-                      id="slide-plot-sector"
-                      value={plotSector}
-                      onChange={(e) => setPlotSector(e.target.value)}
-                      className="w-full min-h-[40px] bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs font-bold text-[#1E293B] cursor-pointer"
-                    >
-                      <option value="Sector A">Sector A</option>
-                      <option value="Sector B">Sector B</option>
-                      <option value="Sector C">Sector C</option>
-                    </select>
+              ) : (
+                <div className="bg-amber-50/70 border border-amber-200 p-4 sm:p-5 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#1E293B]">
+                    <span className="flex items-center space-x-1.5">
+                      <Flame className="w-4 h-4 text-amber-600" />
+                      <span>Crematorium Memorial Preferences</span>
+                    </span>
+                    <span className="font-mono text-amber-800 bg-white border border-amber-200 px-2.5 py-0.5 rounded-md text-[11px]">
+                      Dedicated Cremation Facility
+                    </span>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="slide-plot-row"
-                      className="block text-[11px] font-bold text-[#475569] mb-1"
-                    >
-                      Plot Row
-                    </label>
-                    <select
-                      id="slide-plot-row"
-                      value={plotRow}
-                      onChange={(e) => setPlotRow(e.target.value)}
-                      className="w-full min-h-[40px] bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs font-bold text-[#1E293B] cursor-pointer"
-                    >
-                      <option value="A1">Row A1</option>
-                      <option value="A2">Row A2</option>
-                      <option value="A3">Row A3</option>
-                      <option value="B1">Row B1</option>
-                      <option value="B2">Row B2</option>
-                    </select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="cremation-disposition-select"
+                        className="block text-xs font-bold text-[#1E293B] mb-1.5"
+                      >
+                        Ash Disposition & Memorial Urn *
+                      </label>
+                      <select
+                        id="cremation-disposition-select"
+                        value={cremationDisposition}
+                        onChange={(e) => setCremationDisposition(e.target.value)}
+                        className="w-full min-h-[44px] bg-white border border-[#CBD5E1] rounded-xl px-3.5 py-2 text-xs font-medium text-[#1E293B] focus:outline-none focus:ring-2 focus:ring-[#2563EB] cursor-pointer"
+                      >
+                        <option value="Ceramic Keepsake Urn (Handover to Family)">
+                          Ceramic Keepsake Urn (Handover to Family)
+                        </option>
+                        <option value="Eco-Friendly Biodegradable Urn (Soil / Water Soluble)">
+                          Eco-Friendly Biodegradable Urn (Soil / Water Soluble)
+                        </option>
+                        <option value="Premium Marble Urn with Brass Inlay">
+                          Premium Marble Urn with Brass Inlay
+                        </option>
+                        <option value="Scattering in Memorial Garden (No Urn Retention)">
+                          Scattering in Memorial Garden (No Urn Retention)
+                        </option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#1E293B] mb-1.5">
+                        Family Viewing & Witness Ceremony *
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCremationWitness(true)}
+                          className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                            cremationWitness
+                              ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                              : 'bg-white border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC]'
+                          }`}
+                        >
+                          ✓ Attended Viewing
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCremationWitness(false)}
+                          className={`min-h-[44px] px-3 py-2 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                            !cremationWitness
+                              ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                              : 'bg-white border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC]'
+                          }`}
+                        >
+                          Direct Unattended
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="slide-plot-seat"
-                      className="block text-[11px] font-bold text-[#475569] mb-1"
-                    >
-                      Seat # *
-                    </label>
-                    <input
-                      id="slide-plot-seat"
-                      type="text"
-                      required
-                      value={plotSeat}
-                      onChange={(e) => setPlotSeat(e.target.value)}
-                      placeholder="05"
-                      className="w-full min-h-[40px] bg-white border border-[#CBD5E1] rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-[#1E293B]"
-                    />
+                  <div className="bg-white/80 border border-amber-200/80 rounded-xl p-3 text-[11px] text-amber-900 flex items-center justify-between">
+                    <span className="font-semibold">Selected Configuration:</span>
+                    <span className="font-medium">
+                      {cremationDisposition} • {cremationWitness ? 'Family viewing room ceremony booked' : 'Private direct cremation scheduled'}
+                    </span>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -684,66 +993,72 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
 
               {/* Combo Packages View */}
               {selectionType === 'COMBO' ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {combos.map((combo) => {
-                    const isSelected = selectedComboId === combo.id;
-                    return (
-                      <button
-                        key={combo.id}
-                        type="button"
-                        onClick={() => setSelectedComboId(combo.id)}
-                        className={`text-left p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-2xs flex flex-col justify-between ${
-                          isSelected
-                            ? 'bg-[#EFF6FF]/90 border-[#2563EB] ring-2 ring-[#2563EB]/20'
-                            : 'bg-white border-[#E2E8F0] hover:border-[#CBD5E1]'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-1.5 mb-2">
-                            <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-mono">
-                              Save ₹{combo.savings}
-                            </span>
-                            {combo.includesNamePlate && (
-                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center space-x-1">
-                                <Tag className="w-3 h-3 text-amber-600" />
-                                <span>Plate Included</span>
-                              </span>
-                            )}
-                          </div>
-
-                          <h4 className="font-bold text-[#1E293B] text-sm">{combo.packageName}</h4>
-                          <p className="text-xs text-[#475569] mt-1 leading-relaxed">
-                            {combo.description}
-                          </p>
-                        </div>
-
-                        <div className="mt-4 pt-3 border-t border-[#E2E8F0] flex items-center justify-between w-full">
+                availableCombos.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {availableCombos.map((combo) => {
+                      const isSelected = selectedComboId === combo.id;
+                      return (
+                        <button
+                          key={combo.id}
+                          type="button"
+                          onClick={() => setSelectedComboId(combo.id)}
+                          className={`text-left p-4 rounded-2xl border transition-all duration-200 cursor-pointer shadow-2xs flex flex-col justify-between ${
+                            isSelected
+                              ? 'bg-[#EFF6FF]/90 border-[#2563EB] ring-2 ring-[#2563EB]/20'
+                              : 'bg-white border-[#E2E8F0] hover:border-[#CBD5E1]'
+                          }`}
+                        >
                           <div>
-                            <span className="text-[10px] text-[#64748B] line-through font-mono">
-                              ₹{combo.totalOriginalPrice.toLocaleString('en-IN')}
-                            </span>
-                            <div className="text-lg font-extrabold text-[#2563EB] font-mono">
-                              ₹{combo.comboPrice.toLocaleString('en-IN')}
+                            <div className="flex items-center justify-between gap-1.5 mb-2">
+                              <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-mono">
+                                Save ₹{combo.savings}
+                              </span>
+                              {combo.includesNamePlate && (
+                                <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                                  <Tag className="w-3 h-3 text-amber-600" />
+                                  <span>Plate Included</span>
+                                </span>
+                              )}
                             </div>
+
+                            <h4 className="font-bold text-[#1E293B] text-sm">{combo.packageName}</h4>
+                            <p className="text-xs text-[#475569] mt-1 leading-relaxed">
+                              {combo.description}
+                            </p>
                           </div>
-                          <span
-                            className={`text-xs font-bold px-3 py-1.5 rounded-lg ${
-                              isSelected
-                                ? 'bg-[#2563EB] text-white'
-                                : 'bg-[#F1F5F9] text-[#475569]'
-                            }`}
-                          >
-                            {isSelected ? 'Selected' : 'Select'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+
+                          <div className="mt-4 pt-3 border-t border-[#E2E8F0] flex items-center justify-between w-full">
+                            <div>
+                              <span className="text-[10px] text-[#64748B] line-through font-mono">
+                                ₹{combo.totalOriginalPrice.toLocaleString('en-IN')}
+                              </span>
+                              <div className="text-lg font-extrabold text-[#2563EB] font-mono">
+                                ₹{combo.comboPrice.toLocaleString('en-IN')}
+                              </div>
+                            </div>
+                            <span
+                              className={`text-xs font-bold px-3 py-1.5 rounded-lg ${
+                                isSelected
+                                  ? 'bg-[#2563EB] text-white'
+                                  : 'bg-[#F1F5F9] text-[#475569]'
+                              }`}
+                            >
+                              {isSelected ? 'Selected' : 'Select'}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-6 text-center text-xs text-[#64748B]">
+                    No combo packages found for {serviceType.toLowerCase()} service at this location.
+                  </div>
+                )
               ) : (
                 /* Custom Services Checkbox List */
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {services.map((srv) => {
+                  {availableServices.map((srv) => {
                     const checked = selectedServiceIds.includes(srv.id);
                     return (
                       <label
@@ -805,13 +1120,21 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                   </div>
 
                   <div>
-                    <span className="text-[#64748B] block text-[11px]">Pet & Allocated Plot:</span>
+                    <span className="text-[#64748B] block text-[11px]">
+                      {serviceType === 'BURIAL' ? 'Pet & Allocated Plot:' : 'Pet & Memorial Arrangement:'}
+                    </span>
                     <strong className="text-[#1E293B] block font-bold">
                       {petName || '—'} ({petType})
                     </strong>
-                    <span className="font-mono text-[#2563EB] text-[11px] font-bold">
-                      {plotSector} • {plotRow.replace('Row ', '')}-{plotSeat}
-                    </span>
+                    {serviceType === 'BURIAL' ? (
+                      <span className="font-mono text-[#2563EB] text-[11px] font-bold">
+                        {plotSector} • {plotRow.replace('Row ', '')}-{plotSeat}
+                      </span>
+                    ) : (
+                      <span className="text-amber-800 text-[11px] font-semibold block">
+                        Cremation • {cremationWitness ? 'Attended Viewing' : 'Direct Incineration'}
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -839,7 +1162,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                     { id: 'CASH', label: 'Cash / Counter', icon: Receipt },
                     { id: 'ONLINE_UPI', label: 'Online Bank UPI', icon: Sparkles },
                   ].map((method) => {
-                    const Icon = method.icon;
+                    const MethodIcon = method.icon;
                     const isSelected = paymentMethod === method.id;
                     return (
                       <button
@@ -856,7 +1179,7 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                             : 'bg-white border-[#E2E8F0] text-[#475569] hover:bg-[#F8FAFC] hover:text-[#1E293B]'
                         }`}
                       >
-                        <Icon className="w-5 h-5" />
+                        <MethodIcon className="w-5 h-5" />
                         <span className="text-xs font-bold">{method.label}</span>
                       </button>
                     );
@@ -963,10 +1286,16 @@ export const CustomerBookingForm: React.FC<CustomerBookingProps> = ({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#64748B]">Pet & Plot:</span>
+                <span className="text-[#64748B]">
+                  {receiptModal.booking.serviceType === 'CREMATION' ? 'Pet & Service:' : 'Pet & Plot:'}
+                </span>
                 <span className="font-bold text-[#1E293B]">
-                  {receiptModal.booking.petName} ({receiptModal.booking.petType}) • Plot{' '}
-                  <span className="font-mono">{receiptModal.booking.plotNumber}</span>
+                  {receiptModal.booking.petName} ({receiptModal.booking.petType}) •{' '}
+                  {receiptModal.booking.serviceType === 'CREMATION' ? (
+                    <span className="text-amber-700 font-semibold">Cremation Keepsake Urn</span>
+                  ) : (
+                    <>Plot <span className="font-mono">{receiptModal.booking.plotNumber}</span></>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between">

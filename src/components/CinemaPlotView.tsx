@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { CustomerBooking, NamePlateSubscription } from '../lib/types';
-import { Tv, Send, Compass, X } from 'lucide-react';
+import { Tv, Send, Compass, X, Flame } from 'lucide-react';
 
 interface CinemaPlotViewProps {
   bookings: CustomerBooking[];
@@ -86,6 +86,20 @@ export const CinemaPlotView: React.FC<CinemaPlotViewProps> = ({
           })}
         </div>
       </div>
+
+      {locationName?.toLowerCase().includes('crematorium') && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-center justify-between text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center space-x-2.5">
+            <Flame className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <span className="font-bold">Notice: {locationName} is a Dedicated Cremation Facility.</span>
+              <span className="block text-[11px] text-amber-800 mt-0.5">
+                Ground burial plots shown below are for regional cemetery branches (South Peaceful Haven & North Paws Memorial).
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Legend & Quick Filter Bar */}
       <div className="bg-white/90 backdrop-blur-md border border-[#E2E8F0] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 text-xs shadow-xs">

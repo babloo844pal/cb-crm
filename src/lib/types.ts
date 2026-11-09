@@ -1,5 +1,6 @@
 export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'EXPIRING_SOON' | 'ALLOTTED_TODAY' | 'RENEWED_TODAY' | 'UNAUTHORIZED' | 'PENDING_RENEWAL';
 export type UserRole = 'ADMIN' | 'MANAGER' | 'OPERATOR';
+export type ServiceType = 'BURIAL' | 'CREMATION';
 
 export interface Location {
   id: string;
@@ -10,6 +11,7 @@ export interface Location {
   totalPlots: number;
   occupiedPlots: number;
   availablePlots: number;
+  supportedServices: ServiceType[];
 }
 
 export interface AppUser {
@@ -47,6 +49,7 @@ export interface ComboPackage {
   comboPrice: number;
   savings: number;
   includesNamePlate: boolean;
+  category?: 'BURIAL' | 'CREMATION' | 'ALL';
   active: boolean;
   effectiveFrom?: string;
   effectiveTo?: string;
@@ -57,6 +60,7 @@ export interface CustomerBooking {
   receiptNo: string;
   locationId: string;
   locationName: string;
+  serviceType?: ServiceType;
   customerName: string;
   ownerName?: string;
   customerPhone: string;
